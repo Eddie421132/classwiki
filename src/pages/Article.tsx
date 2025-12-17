@@ -52,7 +52,7 @@ export default function ArticlePage() {
         .from('articles')
         .select(`
           *,
-          profiles!articles_author_id_fkey(real_name, avatar_url)
+          profiles!articles_author_id_profiles_fkey(real_name, avatar_url)
         `)
         .eq('id', id)
         .single();
