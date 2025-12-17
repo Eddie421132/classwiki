@@ -58,11 +58,8 @@ export default function AdminLoginPage() {
             status: 'approved',
           });
 
-          // Assign admin role
-          await supabase.from('user_roles').insert({
-            user_id: data.user.id,
-            role: 'admin',
-          });
+          // Assign admin role using security definer function
+          await supabase.rpc('assign_admin_role', { _user_id: data.user.id });
         }
       }
 
