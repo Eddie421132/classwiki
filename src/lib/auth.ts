@@ -1,7 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const ADMIN_PASSWORD = "791355admin";
-
 export async function checkIsAdmin(userId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('user_roles')
@@ -43,4 +41,22 @@ export async function getRegistrationRequest(userId: string) {
     .maybeSingle();
   
   return { request: data, error };
+}
+
+export async function verifyAdminPassword(password: string): Promise<{ success: boolean; email?: string; password?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('admin-auth', {
+      body: { password }
+    });
+
+    if (error) {
+      console.error('Admin auth error:', error);
+      return { success: false, error: '认证服务错误' };
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Admin auth request failed:', err);
+    return { success: false, error: '认证请求失败' };
+  }
 }
