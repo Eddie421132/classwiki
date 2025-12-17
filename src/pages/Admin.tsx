@@ -95,7 +95,7 @@ export default function AdminPage() {
           title,
           author_id,
           created_at,
-          profiles!articles_author_id_fkey(real_name)
+          profiles!articles_author_id_profiles_fkey(real_name)
         `)
         .order('created_at', { ascending: false });
 
