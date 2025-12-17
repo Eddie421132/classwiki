@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import Editor from "./pages/Editor";
 import Search from "./pages/Search";
 import Article from "./pages/Article";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/editor" element={<Editor />} />
             <Route path="/search" element={<Search />} />
             <Route path="/article/:id" element={<Article />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
