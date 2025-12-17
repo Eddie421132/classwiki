@@ -48,7 +48,7 @@ export default function SearchPage() {
           content,
           cover_image_url,
           created_at,
-          profiles!articles_author_id_fkey(real_name)
+          profiles!articles_author_id_profiles_fkey(real_name)
         `)
         .eq('published', true)
         .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Header } from '@/components/Header';
 import { toast } from 'sonner';
 import { Shield, Loader2, AlertCircle } from 'lucide-react';
-import { ADMIN_PASSWORD } from '@/lib/auth';
+import { verifyAdminPassword } from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function AdminLoginPage() {
@@ -22,45 +22,24 @@ export default function AdminLoginPage() {
     setIsLoading(true);
     setError('');
 
-    if (password !== ADMIN_PASSWORD) {
-      setError('管理员密码错误');
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Sign in or create admin account
-      const adminEmail = 'admin@class7wiki.local';
+      // Verify password server-side
+      const authResult = await verifyAdminPassword(password);
       
-      // Try to sign in first
+      if (!authResult.success) {
+        setError(authResult.error || '管理员密码错误');
+        setIsLoading(false);
+        return;
+      }
+
+      // Sign in with credentials returned from server
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password: ADMIN_PASSWORD,
+        email: authResult.email!,
+        password: authResult.password!,
       });
 
       if (signInError) {
-        // If sign in fails, create the admin account
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: adminEmail,
-          password: ADMIN_PASSWORD,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-
-        if (signUpError) throw signUpError;
-
-        if (data.user) {
-          // Create admin profile
-          await supabase.from('profiles').insert({
-            user_id: data.user.id,
-            real_name: '管理员',
-            status: 'approved',
-          });
-
-          // Assign admin role using security definer function
-          await supabase.rpc('assign_admin_role', { _user_id: data.user.id });
-        }
+        throw signInError;
       }
 
       toast.success('管理员登录成功');

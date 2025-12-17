@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +12,53 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('No authorization header provided');
+      return new Response(JSON.stringify({ error: '需要登录才能使用搜索功能' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify the user is authenticated
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Invalid or expired token');
+      return new Response(JSON.stringify({ error: '认证无效，请重新登录' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const { query, articles } = await req.json();
+    
+    // Validate input
+    if (!query || typeof query !== 'string' || query.length > 500) {
+      return new Response(JSON.stringify({ error: '搜索词无效' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!Array.isArray(articles) || articles.length > 20) {
+      return new Response(JSON.stringify({ error: '文章数据无效' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
@@ -19,7 +66,10 @@ serve(async (req) => {
     }
 
     const articlesContext = articles
-      .map((a: { title: string; content: string }) => `标题: ${a.title}\n摘要: ${a.content}`)
+      .slice(0, 10) // Limit to 10 articles max
+      .map((a: { title: string; content: string }) => 
+        `标题: ${String(a.title || '').slice(0, 100)}\n摘要: ${String(a.content || '').slice(0, 200)}`
+      )
       .join('\n\n');
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -37,7 +87,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `用户搜索: "${query}"\n\n相关文章:\n${articlesContext}\n\n请提供一个简洁的摘要。`
+            content: `用户搜索: "${query.slice(0, 200)}"\n\n相关文章:\n${articlesContext}\n\n请提供一个简洁的摘要。`
           }
         ],
       }),

@@ -1,1 +1,7 @@
 project_id = "aazekmjmdchnpndplmvc"
+
+[functions.admin-auth]
+verify_jwt = false
+
+[functions.ai-search]
+verify_jwt = false
