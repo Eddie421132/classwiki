@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
       }
 
       toast.success('管理员登录成功');
-      navigate('/admin');
+      navigate('/');
     } catch (error: any) {
       console.error('Admin login error:', error);
       setError(error.message || '登录失败');
