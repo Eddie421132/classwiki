@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Server-side admin password - never exposed to client
-const ADMIN_PASSWORD = "791355admin";
+const ADMIN_PASSWORD = "791355";
 const ADMIN_EMAIL = "admin@class7wiki.local";
 
 const corsHeaders = {
@@ -52,6 +52,17 @@ serve(async (req) => {
     if (adminUser) {
       userId = adminUser.id;
       console.log('Found existing admin user:', userId);
+      
+      // Update password to ensure it matches
+      const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+        password: ADMIN_PASSWORD,
+      });
+      
+      if (updateError) {
+        console.error('Error updating admin password:', updateError);
+      } else {
+        console.log('Admin password updated successfully');
+      }
     } else {
       // Create admin user
       console.log('Creating new admin user');
