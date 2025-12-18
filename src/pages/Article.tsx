@@ -7,7 +7,7 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Loader2, Calendar, User, ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Calendar, User, ArrowLeft, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { ArticleLikes } from '@/components/ArticleLikes';
+import { ArticleComments } from '@/components/ArticleComments';
 
 interface Article {
   id: string;
@@ -183,6 +185,14 @@ export default function ArticlePage() {
                 ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
               }) }}
             />
+
+            <div className="mt-8 pt-6 border-t border-border">
+              <ArticleLikes articleId={article.id} />
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-border">
+              <ArticleComments articleId={article.id} />
+            </div>
           </article>
         </div>
       </main>
