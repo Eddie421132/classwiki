@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Server-side admin password - never exposed to client
-const ADMIN_PASSWORD = "791355";
+const ADMIN_PASSWORD = "791355admin";
 const ADMIN_EMAIL = "admin@class7wiki.local";
 
 const corsHeaders = {
