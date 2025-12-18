@@ -92,8 +92,8 @@ export default function AuthPage() {
     }
 
     try {
-      // Generate a unique email based on real name
-      const uniqueEmail = `${registerRealName.replace(/\s+/g, '_')}_${Date.now()}@class7wiki.local`;
+      // Generate a valid email using only numbers (avoid Chinese characters)
+      const uniqueEmail = `user_${Date.now()}@class7wiki.local`;
       
       const { data, error } = await supabase.auth.signUp({
         email: uniqueEmail,
