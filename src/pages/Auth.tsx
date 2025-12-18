@@ -19,7 +19,7 @@ export default function AuthPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginRealName, setLoginRealName] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   // Register form state
@@ -51,8 +51,16 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
+      // Find the user's email by real name using secure function
+      const { data: email, error: lookupError } = await supabase
+        .rpc('get_email_by_real_name', { _real_name: loginRealName });
+
+      if (lookupError || !email) {
+        throw new Error('找不到该用户，请检查姓名是否正确');
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email: email,
         password: loginPassword,
       });
 
@@ -126,13 +134,14 @@ export default function AuthPage() {
           }
         }
 
-        // Create profile
+        // Create profile with email for login lookup
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
             user_id: data.user.id,
             real_name: registerRealName,
             avatar_url: uploadedAvatarUrl,
+            email: uniqueEmail,
             status: 'pending',
           });
 
@@ -196,13 +205,13 @@ export default function AuthPage() {
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">邮箱/账号</Label>
+                      <Label htmlFor="login-name">姓名</Label>
                       <Input
-                        id="login-email"
+                        id="login-name"
                         type="text"
-                        placeholder="输入你的账号"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="输入你的真实姓名"
+                        value={loginRealName}
+                        onChange={(e) => setLoginRealName(e.target.value)}
                         required
                       />
                     </div>
