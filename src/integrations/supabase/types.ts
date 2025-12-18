@@ -185,6 +185,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           id: string
           real_name: string
           status: string
@@ -194,6 +195,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           real_name: string
           status?: string
@@ -203,6 +205,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           real_name?: string
           status?: string
@@ -270,6 +273,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_email_by_real_name: { Args: { _real_name: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
