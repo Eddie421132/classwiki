@@ -181,6 +181,45 @@ export type Database = {
           },
         ]
       }
+      pending_admin_actions: {
+        Row: {
+          action_type: string
+          approved_at: string | null
+          approved_by: string | null
+          id: string
+          requested_at: string
+          requested_by: string
+          status: string
+          target_id: string
+          target_name: string
+          target_type: string
+        }
+        Insert: {
+          action_type: string
+          approved_at?: string | null
+          approved_by?: string | null
+          id?: string
+          requested_at?: string
+          requested_by: string
+          status?: string
+          target_id: string
+          target_name: string
+          target_type: string
+        }
+        Update: {
+          action_type?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          id?: string
+          requested_at?: string
+          requested_by?: string
+          status?: string
+          target_id?: string
+          target_name?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -282,9 +321,10 @@ export type Database = {
         Returns: boolean
       }
       is_approved_user: { Args: { _user_id: string }; Returns: boolean }
+      is_second_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "editor"
+      app_role: "admin" | "editor" | "second_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -412,7 +452,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "editor"],
+      app_role: ["admin", "editor", "second_admin"],
     },
   },
 } as const
