@@ -193,6 +193,23 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteUser = async (profile: Profile) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { targetUserId: profile.user_id }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(`已删除用户 ${profile.real_name}`);
+      fetchData();
+    } catch (error: any) {
+      console.error('Delete user error:', error);
+      toast.error(error.message || '删除用户失败');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -355,6 +372,28 @@ export default function AdminPage() {
                                 封禁
                               </Button>
                             )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive" className="gap-1">
+                                  <Trash2 className="w-4 h-4" />
+                                  删除
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    此操作不可撤销，用户账户及其所有数据将被永久删除。
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>取消</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteUser(profile)}>
+                                    确认删除
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         )}
                       </div>

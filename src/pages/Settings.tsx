@@ -8,16 +8,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Upload, Loader2, User, Save } from 'lucide-react';
+import { Upload, Loader2, User, Save, Trash2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, isLoading: authLoading, refreshProfile, signOut } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [realName, setRealName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -107,6 +119,30 @@ export default function SettingsPage() {
       toast.error(error.message || '保存失败');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    setIsDeleting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { targetUserId: user.id }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success('账户已删除');
+      await signOut();
+      navigate('/');
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      toast.error(error.message || '删除账户失败');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -205,6 +241,42 @@ export default function SettingsPage() {
                 )}
                 保存修改
               </Button>
+
+              {/* Delete Account Section */}
+              <div className="pt-6 border-t border-border">
+                <div className="space-y-2">
+                  <Label className="text-destructive">危险操作</Label>
+                  <p className="text-sm text-muted-foreground">
+                    删除账户后，所有数据将被永久删除，无法恢复。
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="w-full gap-2" disabled={isDeleting}>
+                        {isDeleting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                        删除我的账户
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除账户？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          此操作不可撤销。您的账户、文章、评论等所有数据将被永久删除。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAccount}>
+                          确认删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
