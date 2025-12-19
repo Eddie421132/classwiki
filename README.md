@@ -4,7 +4,7 @@
 
 ```sh
 # 首先安装npm
-安装地址https://npm.nodejs.cn/cli/v8/configuring-npm/install/
+安装地址https://nodejs.org/zh-cn/download
 # 步骤 1：使用项目的 Git URL 克隆仓库
 git clone https://github.com/Eddie421132/classwiki
 
