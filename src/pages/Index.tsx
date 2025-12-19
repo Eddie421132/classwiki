@@ -83,7 +83,7 @@ const Index = () => {
               7班Wiki百科
             </h1>
             <p className="wiki-subtitle max-w-2xl mx-auto mb-10">
-              记录班级故事，分享知识与回忆
+              记录班级故事，分享有趣的事情
             </p>
           </div>
 
@@ -155,7 +155,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2024 7班Wiki百科 · 用知识连接我们</p>
+          <p>© 2025 7班Wiki百科 · 用知识连接我们</p>
         </div>
       </footer>
     </div>

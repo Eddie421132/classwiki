@@ -38,7 +38,7 @@ export function SearchBox({ onSearch, isLoading = false, className = '', size = 
         )}
         <Input
           type="text"
-          placeholder="输入关键词搜索文章..."
+          placeholder="输入关键词来检索文章..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={inputClass}

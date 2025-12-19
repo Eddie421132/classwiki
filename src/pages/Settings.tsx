@@ -247,7 +247,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label className="text-destructive">危险操作</Label>
                   <p className="text-sm text-muted-foreground">
-                    删除账户后，所有数据将被永久删除，无法恢复。
+                    删除账户后，所有数据将被损坏掉，无法恢复。
                   </p>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
