@@ -53,9 +53,16 @@ export default function AuthPage() {
     try {
       // Find the user's email by real name using secure function
       const { data: email, error: lookupError } = await supabase
-        .rpc('get_email_by_real_name', { _real_name: loginRealName });
+        .rpc('get_email_by_real_name', { _real_name: loginRealName.trim() });
 
-      if (lookupError || !email) {
+      console.log('Login lookup result:', { email, lookupError, loginRealName });
+
+      if (lookupError) {
+        console.error('Lookup error:', lookupError);
+        throw new Error('查找用户时出错');
+      }
+      
+      if (!email) {
         throw new Error('找不到该用户，请检查姓名是否正确');
       }
 
