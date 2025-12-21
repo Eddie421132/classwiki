@@ -147,6 +147,8 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           id: string
+          is_pinned: boolean
+          pinned_at: string | null
           published: boolean
           title: string
           updated_at: string
@@ -157,6 +159,8 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           id?: string
+          is_pinned?: boolean
+          pinned_at?: string | null
           published?: boolean
           title: string
           updated_at?: string
@@ -167,6 +171,8 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           id?: string
+          is_pinned?: boolean
+          pinned_at?: string | null
           published?: boolean
           title?: string
           updated_at?: string

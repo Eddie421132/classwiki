@@ -17,6 +17,7 @@ interface AuthContextType {
   profile: Profile | null;
   isAdmin: boolean;
   isApprovedEditor: boolean;
+  isRegularUser: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isApprovedEditor, setIsApprovedEditor] = useState(false);
+  const [isRegularUser, setIsRegularUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshProfile = async () => {
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(adminResult);
     setIsApprovedEditor(editorResult);
     setProfile(profileResult.profile as Profile | null);
+    setIsRegularUser(profileResult.profile?.status === 'user');
   };
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setIsAdmin(false);
           setIsApprovedEditor(false);
+          setIsRegularUser(false);
         }
         setIsLoading(false);
       }
@@ -91,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setIsAdmin(false);
     setIsApprovedEditor(false);
+    setIsRegularUser(false);
   };
 
   return (
@@ -100,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       isAdmin,
       isApprovedEditor,
+      isRegularUser,
       isLoading,
       signOut,
       refreshProfile

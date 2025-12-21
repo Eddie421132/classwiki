@@ -11,6 +11,8 @@ interface Article {
   content: string;
   cover_image_url: string | null;
   created_at: string;
+  is_pinned: boolean;
+  pinned_at: string | null;
   profiles: { real_name: string } | null;
 }
 
@@ -34,9 +36,13 @@ const Index = () => {
           content,
           cover_image_url,
           created_at,
+          is_pinned,
+          pinned_at,
           profiles!articles_author_id_profiles_fkey(real_name)
         `)
         .eq('published', true)
+        .order('is_pinned', { ascending: false })
+        .order('pinned_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
         .limit(6);
 
@@ -138,6 +144,7 @@ const Index = () => {
                     coverImage={article.cover_image_url}
                     authorName={article.profiles?.real_name || '未知作者'}
                     createdAt={article.created_at}
+                    isPinned={article.is_pinned}
                   />
                 </div>
               ))}

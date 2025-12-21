@@ -6,8 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Calendar, User, ArrowLeft, Trash2 } from 'lucide-react';
+import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,8 @@ interface Article {
   author_id: string;
   created_at: string;
   updated_at: string;
+  is_pinned: boolean;
+  pinned_at: string | null;
   profiles: { 
     real_name: string;
     avatar_url: string | null;
@@ -83,6 +86,29 @@ export default function ArticlePage() {
     }
   };
 
+  const handleTogglePin = async () => {
+    if (!article) return;
+    
+    try {
+      const newPinnedStatus = !article.is_pinned;
+      const { error } = await supabase
+        .from('articles')
+        .update({ 
+          is_pinned: newPinnedStatus,
+          pinned_at: newPinnedStatus ? new Date().toISOString() : null
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setArticle({ ...article, is_pinned: newPinnedStatus });
+      toast.success(newPinnedStatus ? '文章已置顶' : '已取消置顶');
+    } catch (error) {
+      console.error('Pin error:', error);
+      toast.error('操作失败');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -131,9 +157,17 @@ export default function ArticlePage() {
               />
             )}
 
-            <h1 className="font-serif text-3xl md:text-4xl font-bold mb-6">
-              {article.title}
-            </h1>
+            <div className="flex items-start gap-3 mb-6">
+              {article.is_pinned && (
+                <Badge variant="secondary" className="gap-1 mt-2 shrink-0">
+                  <Pin className="w-3 h-3" />
+                  置顶
+                </Badge>
+              )}
+              <h1 className="font-serif text-3xl md:text-4xl font-bold flex-1">
+                {article.title}
+              </h1>
+            </div>
 
             <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-6 border-b border-border">
               <div className="flex items-center gap-4">
@@ -150,8 +184,28 @@ export default function ArticlePage() {
                 </div>
               </div>
 
-              {canEdit && (
-                <div className="flex gap-2">
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1"
+                    onClick={handleTogglePin}
+                  >
+                    {article.is_pinned ? (
+                      <>
+                        <PinOff className="w-4 h-4" />
+                        取消置顶
+                      </>
+                    ) : (
+                      <>
+                        <Pin className="w-4 h-4" />
+                        置顶
+                      </>
+                    )}
+                  </Button>
+                )}
+                {canEdit && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm" className="gap-1">
@@ -174,8 +228,8 @@ export default function ArticlePage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div 

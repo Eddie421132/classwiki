@@ -70,7 +70,7 @@ export function Header() {
                   <div className="px-2 py-1.5">
                     <p className="text-sm font-medium">{profile?.real_name || '用户'}</p>
                     <p className="text-xs text-muted-foreground">
-                      {isAdmin ? '管理员' : isApprovedEditor ? '编者' : '待审核'}
+                      {isAdmin ? '管理员' : isApprovedEditor ? '编者' : profile?.status === 'user' ? '普通用户' : '待审核'}
                     </p>
                   </div>
                   <DropdownMenuSeparator />
@@ -94,7 +94,16 @@ export function Header() {
                 className="gap-2"
               >
                 <Shield className="w-4 h-4" />
-                管理员登录
+                管理员
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/user-auth')}
+                className="gap-2"
+              >
+                <User className="w-4 h-4" />
+                用户登录
               </Button>
               <Button
                 size="sm"
@@ -102,7 +111,7 @@ export function Header() {
                 className="gap-2 bg-primary text-primary-foreground"
               >
                 <Edit className="w-4 h-4" />
-                编者注册登录
+                编者入口
               </Button>
             </>
           )}
