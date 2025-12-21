@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, Pin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface ArticleCardProps {
   id: string;
@@ -8,9 +9,10 @@ interface ArticleCardProps {
   coverImage?: string | null;
   authorName: string;
   createdAt: string;
+  isPinned?: boolean;
 }
 
-export function ArticleCard({ id, title, content, coverImage, authorName, createdAt }: ArticleCardProps) {
+export function ArticleCard({ id, title, content, coverImage, authorName, createdAt, isPinned }: ArticleCardProps) {
   // Extract text content from HTML
   const getExcerpt = (html: string, maxLength: number = 150) => {
     const div = document.createElement('div');
@@ -36,7 +38,15 @@ export function ArticleCard({ id, title, content, coverImage, authorName, create
           className="article-card-image"
         />
       )}
-      <h3 className="article-card-title">{title}</h3>
+      <div className="flex items-start gap-2 mb-1">
+        {isPinned && (
+          <Badge variant="secondary" className="gap-1 shrink-0">
+            <Pin className="w-3 h-3" />
+            置顶
+          </Badge>
+        )}
+        <h3 className="article-card-title flex-1">{title}</h3>
+      </div>
       <p className="article-card-excerpt">{getExcerpt(content)}</p>
       <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
         <span className="flex items-center gap-1">

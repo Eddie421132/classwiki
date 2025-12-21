@@ -256,6 +256,91 @@
     @apply bg-muted p-4 rounded-lg my-4 overflow-x-auto;
   }
 
+  /* Prose styles for article content */
+  .prose {
+    @apply text-foreground;
+  }
+
+  .prose h1 {
+    @apply text-3xl font-bold my-6;
+    font-family: 'Noto Serif SC', serif;
+  }
+
+  .prose h2 {
+    @apply text-2xl font-bold my-5;
+    font-family: 'Noto Serif SC', serif;
+  }
+
+  .prose h3 {
+    @apply text-xl font-semibold my-4;
+    font-family: 'Noto Serif SC', serif;
+  }
+
+  .prose p {
+    @apply my-4 leading-relaxed;
+  }
+
+  .prose strong {
+    @apply font-bold;
+  }
+
+  .prose em {
+    @apply italic;
+  }
+
+  .prose u {
+    @apply underline;
+  }
+
+  .prose s {
+    @apply line-through;
+  }
+
+  .prose ul {
+    @apply list-disc pl-6 my-4;
+  }
+
+  .prose ol {
+    @apply list-decimal pl-6 my-4;
+  }
+
+  .prose li {
+    @apply my-1;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-primary pl-4 italic my-6 text-muted-foreground;
+  }
+
+  .prose pre {
+    @apply bg-muted p-4 rounded-lg my-4 overflow-x-auto;
+  }
+
+  .prose code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm;
+  }
+
+  .prose a {
+    @apply text-primary underline hover:opacity-80;
+  }
+
+  .prose img {
+    @apply max-w-full h-auto rounded-lg my-6;
+  }
+
+  .prose table {
+    @apply w-full border-collapse my-6;
+  }
+
+  .prose th,
+  .prose td {
+    @apply border border-border px-4 py-2 text-left;
+  }
+
+  .prose th {
+    @apply bg-muted font-semibold;
+  }
+
   .editor-toolbar {
     @apply flex flex-wrap gap-1 p-2 border-b border-border bg-muted/50 rounded-t-lg;
   }
