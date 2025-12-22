@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchBox } from '@/components/SearchBox';
 import { ArticleCard } from '@/components/ArticleCard';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, BookOpen, Users, FileText } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, BookOpen, Users, FileText, Edit } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Article {
   id: string;
@@ -13,10 +16,14 @@ interface Article {
   created_at: string;
   is_pinned: boolean;
   pinned_at: string | null;
+  author_id: string;
   profiles: { real_name: string } | null;
+  authorRole?: 'admin' | 'editor' | null;
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { isAdmin, isApprovedEditor } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, editors: 0 });
@@ -38,6 +45,7 @@ const Index = () => {
           created_at,
           is_pinned,
           pinned_at,
+          author_id,
           profiles!articles_author_id_profiles_fkey(real_name)
         `)
         .eq('published', true)
@@ -47,7 +55,27 @@ const Index = () => {
         .limit(6);
 
       if (error) throw error;
-      setArticles((data || []) as unknown as Article[]);
+
+      // Fetch author roles
+      const authorIds = [...new Set((data || []).map(a => a.author_id))];
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', authorIds);
+
+      const roleMap = new Map<string, 'admin' | 'editor'>();
+      rolesData?.forEach(r => {
+        if (r.role === 'admin' || r.role === 'editor') {
+          roleMap.set(r.user_id, r.role);
+        }
+      });
+
+      const articlesWithRoles = (data || []).map(article => ({
+        ...article,
+        authorRole: roleMap.get(article.author_id) || null,
+      }));
+
+      setArticles(articlesWithRoles as unknown as Article[]);
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
@@ -70,6 +98,8 @@ const Index = () => {
       console.error('Stats error:', error);
     }
   };
+
+  const canEdit = isAdmin || isApprovedEditor;
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,8 +124,22 @@ const Index = () => {
           </div>
 
           <div className="animate-slide-up animation-delay-200">
-            <SearchBox size="large" className="max-w-2xl mx-auto mb-12" />
+            <SearchBox size="large" className="max-w-2xl mx-auto mb-8" />
           </div>
+
+          {/* Enter Editor Button */}
+          {canEdit && (
+            <div className="animate-fade-in animation-delay-300 mb-12">
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/editor')}
+                className="gap-2"
+              >
+                <Edit className="w-5 h-5" />
+                进入编辑器
+              </Button>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="flex justify-center gap-8 md:gap-16 animate-fade-in animation-delay-300">
@@ -143,6 +187,7 @@ const Index = () => {
                     content={article.content}
                     coverImage={article.cover_image_url}
                     authorName={article.profiles?.real_name || '未知作者'}
+                    authorRole={article.authorRole}
                     createdAt={article.created_at}
                     isPinned={article.is_pinned}
                   />
