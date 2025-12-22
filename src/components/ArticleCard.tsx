@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Calendar, User, Pin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AuthorBadge } from '@/components/AuthorBadge';
 
 interface ArticleCardProps {
   id: string;
@@ -8,11 +9,12 @@ interface ArticleCardProps {
   content: string;
   coverImage?: string | null;
   authorName: string;
+  authorRole?: 'admin' | 'editor' | null;
   createdAt: string;
   isPinned?: boolean;
 }
 
-export function ArticleCard({ id, title, content, coverImage, authorName, createdAt, isPinned }: ArticleCardProps) {
+export function ArticleCard({ id, title, content, coverImage, authorName, authorRole, createdAt, isPinned }: ArticleCardProps) {
   // Extract text content from HTML
   const getExcerpt = (html: string, maxLength: number = 150) => {
     const div = document.createElement('div');
@@ -52,6 +54,7 @@ export function ArticleCard({ id, title, content, coverImage, authorName, create
         <span className="flex items-center gap-1">
           <User className="w-3 h-3" />
           {authorName}
+          {authorRole && <AuthorBadge role={authorRole} size="sm" />}
         </span>
         <span className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />

@@ -7,6 +7,7 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { AuthorBadge } from '@/components/AuthorBadge';
 import { toast } from 'sonner';
 import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff } from 'lucide-react';
 import {
@@ -44,6 +45,7 @@ export default function ArticlePage() {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
+  const [authorRole, setAuthorRole] = useState<'admin' | 'editor' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +67,18 @@ export default function ArticlePage() {
 
       if (error) throw error;
       setArticle(data as unknown as Article);
+
+      // Fetch author role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.author_id)
+        .in('role', ['admin', 'editor'])
+        .maybeSingle();
+
+      if (roleData && (roleData.role === 'admin' || roleData.role === 'editor')) {
+        setAuthorRole(roleData.role);
+      }
     } catch (error) {
       console.error('Fetch error:', error);
       toast.error('文章不存在或已被删除');
@@ -176,7 +190,10 @@ export default function ArticlePage() {
                   <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{article.profiles?.real_name || '未知作者'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{article.profiles?.real_name || '未知作者'}</p>
+                    <AuthorBadge role={authorRole} size="sm" />
+                  </div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {formatDate(article.created_at)}

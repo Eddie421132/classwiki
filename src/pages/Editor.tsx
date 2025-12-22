@@ -1,15 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Header } from '@/components/Header';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, Loader2, Send, ImageIcon } from 'lucide-react';
+import { Loader2, Send, ImageIcon, X, Save, FileText } from 'lucide-react';
+
+const DRAFT_KEY = 'wiki-article-draft';
+
+interface Draft {
+  title: string;
+  content: string;
+  coverImage: string | null;
+  savedAt: string;
+}
 
 export default function EditorPage() {
   const navigate = useNavigate();
@@ -18,7 +24,49 @@ export default function EditorPage() {
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  // Load draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        const draft: Draft = JSON.parse(savedDraft);
+        setTitle(draft.title || '');
+        setContent(draft.content || '');
+        setCoverImage(draft.coverImage || null);
+        setLastSaved(draft.savedAt);
+        setHasDraft(true);
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+      }
+    }
+  }, []);
+
+  // Auto-save draft
+  const saveDraft = useCallback(() => {
+    const draft: Draft = {
+      title,
+      content,
+      coverImage,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    setLastSaved(draft.savedAt);
+    setHasDraft(true);
+  }, [title, content, coverImage]);
+
+  // Auto-save every 30 seconds if there are changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (title.trim() || content.trim()) {
+        saveDraft();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [title, content, coverImage, saveDraft]);
 
   useEffect(() => {
     if (!authLoading && (!user || (!isAdmin && !isApprovedEditor))) {
@@ -63,9 +111,18 @@ export default function EditorPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSaveDraft = () => {
+    saveDraft();
+    toast.success('草稿已保存');
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+    setLastSaved(null);
+  };
+
+  const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error('请输入文章标题');
       return;
@@ -89,6 +146,7 @@ export default function EditorPage() {
 
       if (error) throw error;
 
+      clearDraft();
       toast.success('文章发布成功');
       navigate('/');
     } catch (error: any) {
@@ -99,103 +157,128 @@ export default function EditorPage() {
     }
   };
 
+  const handleExit = () => {
+    if (title.trim() || content.trim()) {
+      saveDraft();
+      toast.success('草稿已自动保存');
+    }
+    navigate('/');
+  };
+
+  const formatSavedTime = (isoString: string) => {
+    return new Date(isoString).toLocaleString('zh-CN', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   if (authLoading || !user || (!isAdmin && !isApprovedEditor)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container mx-auto px-4 pt-24 pb-12">
-        <div className="max-w-4xl mx-auto">
-          <Card className="wiki-card">
-            <CardHeader>
-              <CardTitle className="font-serif text-2xl">发布新文章</CardTitle>
-              <CardDescription>编写并发布文章到7班Wiki</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title">文章标题</Label>
-                  <Input
-                    id="title"
-                    placeholder="输入文章标题"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="text-lg"
-                    required
-                  />
-                </div>
+    <div className="fixed inset-0 bg-background flex flex-col">
+      {/* Header Bar */}
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={handleExit}>
+            <X className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span>编辑文章</span>
+            {lastSaved && (
+              <span className="text-xs">· 已保存于 {formatSavedTime(lastSaved)}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleSaveDraft} className="gap-1">
+            <Save className="w-4 h-4" />
+            保存草稿
+          </Button>
+          <Button size="sm" onClick={handleSubmit} disabled={isSubmitting} className="gap-1">
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            发布
+          </Button>
+        </div>
+      </header>
 
-                <div className="space-y-2">
-                  <Label>封面图片（可选）</Label>
-                  <div
-                    className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => coverInputRef.current?.click()}
-                  >
-                    {coverImage ? (
-                      <div className="relative">
-                        <img
-                          src={coverImage}
-                          alt="Cover preview"
-                          className="max-h-48 mx-auto rounded-lg"
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="mt-2"
-                        >
-                          更换图片
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <ImageIcon className="w-10 h-10" />
-                        <p>点击上传封面图片</p>
-                        <p className="text-xs">支持 JPG, PNG, GIF，最大 5MB</p>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    ref={coverInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCoverUpload}
-                    className="hidden"
-                  />
-                </div>
+      {/* Main Editor Area */}
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Title Input */}
+          <Input
+            placeholder="输入文章标题..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-3xl font-serif font-bold border-none shadow-none focus-visible:ring-0 px-0 mb-6 placeholder:text-muted-foreground/50"
+          />
 
-                <div className="space-y-2">
-                  <Label>文章内容</Label>
-                  <RichTextEditor content={content} onChange={setContent} />
-                </div>
-
-                <div className="flex justify-end gap-3">
+          {/* Cover Image */}
+          <div className="mb-6">
+            {coverImage ? (
+              <div className="relative group">
+                <img
+                  src={coverImage}
+                  alt="Cover preview"
+                  className="w-full max-h-64 object-cover rounded-lg"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => navigate('/')}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => coverInputRef.current?.click()}
                   >
-                    取消
+                    更换封面
                   </Button>
-                  <Button type="submit" disabled={isSubmitting} className="gap-2">
-                    {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    发布文章
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setCoverImage(null)}
+                  >
+                    移除封面
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="w-full border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors"
+                onClick={() => coverInputRef.current?.click()}
+              >
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <ImageIcon className="w-8 h-8" />
+                  <p>添加封面图片（可选）</p>
+                  <p className="text-xs">支持 JPG, PNG, GIF，最大 5MB</p>
+                </div>
+              </button>
+            )}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCoverUpload}
+              className="hidden"
+            />
+          </div>
+
+          {/* Rich Text Editor */}
+          <div className="min-h-[400px]">
+            <RichTextEditor content={content} onChange={setContent} />
+          </div>
         </div>
       </main>
     </div>
