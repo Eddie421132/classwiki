@@ -7,58 +7,86 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Loader2, Send, ImageIcon, X, Save, FileText } from 'lucide-react';
+import { validateContent } from '@/lib/emojiValidator';
 
-const DRAFT_KEY = 'wiki-article-draft';
-
-interface Draft {
+interface DraftData {
+  id?: string;
   title: string;
   content: string;
-  coverImage: string | null;
-  savedAt: string;
+  cover_image_url: string | null;
 }
 
 export default function EditorPage() {
   const navigate = useNavigate();
   const { user, isAdmin, isApprovedEditor, isLoading: authLoading } = useAuth();
+  const [draftId, setDraftId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Load draft on mount
+  // Load draft from sessionStorage on mount
   useEffect(() => {
-    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    const savedDraft = sessionStorage.getItem('edit-draft');
     if (savedDraft) {
       try {
-        const draft: Draft = JSON.parse(savedDraft);
+        const draft: DraftData = JSON.parse(savedDraft);
+        setDraftId(draft.id || null);
         setTitle(draft.title || '');
         setContent(draft.content || '');
-        setCoverImage(draft.coverImage || null);
-        setLastSaved(draft.savedAt);
-        setHasDraft(true);
+        setCoverImage(draft.cover_image_url || null);
+        sessionStorage.removeItem('edit-draft');
       } catch (e) {
         console.error('Failed to load draft:', e);
       }
     }
   }, []);
 
-  // Auto-save draft
-  const saveDraft = useCallback(() => {
-    const draft: Draft = {
-      title,
-      content,
-      coverImage,
-      savedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    setLastSaved(draft.savedAt);
-    setHasDraft(true);
-  }, [title, content, coverImage]);
+  // Auto-save draft every 30 seconds
+  const saveDraft = useCallback(async () => {
+    if (!user || (!title.trim() && !content.trim())) return;
 
-  // Auto-save every 30 seconds if there are changes
+    setIsSaving(true);
+    try {
+      if (draftId) {
+        // Update existing draft
+        const { error } = await supabase
+          .from('article_drafts')
+          .update({
+            title: title.trim(),
+            content,
+            cover_image_url: coverImage,
+          })
+          .eq('id', draftId);
+
+        if (error) throw error;
+      } else {
+        // Create new draft
+        const { data, error } = await supabase
+          .from('article_drafts')
+          .insert({
+            user_id: user.id,
+            title: title.trim(),
+            content,
+            cover_image_url: coverImage,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        if (data) setDraftId(data.id);
+      }
+      setLastSaved(new Date().toISOString());
+    } catch (error) {
+      console.error('Save draft error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [user, draftId, title, content, coverImage]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       if (title.trim() || content.trim()) {
@@ -111,15 +139,9 @@ export default function EditorPage() {
     }
   };
 
-  const handleSaveDraft = () => {
-    saveDraft();
+  const handleSaveDraft = async () => {
+    await saveDraft();
     toast.success('草稿已保存');
-  };
-
-  const clearDraft = () => {
-    localStorage.removeItem(DRAFT_KEY);
-    setHasDraft(false);
-    setLastSaved(null);
   };
 
   const handleSubmit = async () => {
@@ -130,6 +152,13 @@ export default function EditorPage() {
 
     if (!content.trim() || content === '<p></p>') {
       toast.error('请输入文章内容');
+      return;
+    }
+
+    // Validate content for forbidden emoji
+    const validation = validateContent(title + content);
+    if (!validation.valid) {
+      toast.error(validation.error);
       return;
     }
 
@@ -146,7 +175,11 @@ export default function EditorPage() {
 
       if (error) throw error;
 
-      clearDraft();
+      // Delete draft if exists
+      if (draftId) {
+        await supabase.from('article_drafts').delete().eq('id', draftId);
+      }
+
       toast.success('文章发布成功');
       navigate('/');
     } catch (error: any) {
@@ -157,9 +190,9 @@ export default function EditorPage() {
     }
   };
 
-  const handleExit = () => {
+  const handleExit = async () => {
     if (title.trim() || content.trim()) {
-      saveDraft();
+      await saveDraft();
       toast.success('草稿已自动保存');
     }
     navigate('/');
@@ -196,10 +229,13 @@ export default function EditorPage() {
             {lastSaved && (
               <span className="text-xs">· 已保存于 {formatSavedTime(lastSaved)}</span>
             )}
+            {isSaving && (
+              <span className="text-xs">· 保存中...</span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleSaveDraft} className="gap-1">
+          <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={isSaving} className="gap-1">
             <Save className="w-4 h-4" />
             保存草稿
           </Button>

@@ -41,6 +41,7 @@ interface Profile {
   avatar_url: string | null;
   status: string;
   created_at: string;
+  last_login_ip: string | null;
 }
 
 interface Article {
@@ -338,7 +339,7 @@ export default function AdminPage() {
                           </Avatar>
                           <div>
                             <p className="font-medium">{profile.real_name}</p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Badge variant={
                                 profile.status === 'approved' ? 'default' :
                                 profile.status === 'banned' ? 'destructive' :
@@ -348,6 +349,11 @@ export default function AdminPage() {
                                  profile.status === 'banned' ? '已封禁' :
                                  profile.status === 'pending' ? '待审核' : '已拒绝'}
                               </Badge>
+                              {profile.last_login_ip && (
+                                <span className="text-xs text-muted-foreground">
+                                  IP: {profile.last_login_ip}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

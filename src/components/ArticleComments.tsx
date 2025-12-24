@@ -226,6 +226,12 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
     }
     if (!newComment.trim()) return;
 
+    // Check for forbidden emoji
+    if (newComment.includes('🤔')) {
+      toast.error('评论中不能包含 🤔 表情');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase
@@ -254,6 +260,12 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
       return;
     }
     if (!replyContent.trim()) return;
+
+    // Check for forbidden emoji
+    if (replyContent.includes('🤔')) {
+      toast.error('回复中不能包含 🤔 表情');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
