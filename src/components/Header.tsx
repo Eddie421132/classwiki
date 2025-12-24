@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Edit, LogOut, User, Bell, Settings } from 'lucide-react';
+import { Shield, Edit, LogOut, User, Bell, Settings, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -19,6 +19,8 @@ export function Header() {
     await signOut();
     navigate('/');
   };
+
+  const canEdit = isAdmin || isApprovedEditor;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -44,7 +46,7 @@ export function Header() {
                 </Button>
               )}
               
-              {(isApprovedEditor || isAdmin) && (
+              {canEdit && (
                 <Button
                   size="sm"
                   onClick={() => navigate('/editor')}
@@ -78,6 +80,12 @@ export function Header() {
                     <Settings className="w-4 h-4 mr-2" />
                     个人设置
                   </DropdownMenuItem>
+                  {canEdit && (
+                    <DropdownMenuItem onClick={() => navigate('/drafts')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      草稿箱
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
                     退出登录

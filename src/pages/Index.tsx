@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchBox } from '@/components/SearchBox';
 import { ArticleCard } from '@/components/ArticleCard';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, BookOpen, Users, FileText, Edit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, BookOpen, Users, FileText } from 'lucide-react';
 
 interface Article {
   id: string;
@@ -22,8 +19,6 @@ interface Article {
 }
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { isAdmin, isApprovedEditor } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, editors: 0 });
@@ -99,8 +94,6 @@ const Index = () => {
     }
   };
 
-  const canEdit = isAdmin || isApprovedEditor;
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -126,20 +119,6 @@ const Index = () => {
           <div className="animate-slide-up animation-delay-200">
             <SearchBox size="large" className="max-w-2xl mx-auto mb-8" />
           </div>
-
-          {/* Enter Editor Button */}
-          {canEdit && (
-            <div className="animate-fade-in animation-delay-300 mb-12">
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/editor')}
-                className="gap-2"
-              >
-                <Edit className="w-5 h-5" />
-                进入编辑器
-              </Button>
-            </div>
-          )}
 
           {/* Stats */}
           <div className="flex justify-center gap-8 md:gap-16 animate-fade-in animation-delay-300">

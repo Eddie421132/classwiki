@@ -104,6 +104,36 @@ export type Database = {
           },
         ]
       }
+      article_drafts: {
+        Row: {
+          content: string
+          cover_image_url: string | null
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       article_likes: {
         Row: {
           article_id: string
@@ -259,6 +289,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          last_login_ip: string | null
           real_name: string
           status: string
           updated_at: string
@@ -269,6 +300,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          last_login_ip?: string | null
           real_name: string
           status?: string
           updated_at?: string
@@ -279,6 +311,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          last_login_ip?: string | null
           real_name?: string
           status?: string
           updated_at?: string
