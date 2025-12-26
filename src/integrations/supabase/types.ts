@@ -58,6 +58,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           parent_id: string | null
           updated_at: string
           user_id: string
@@ -67,6 +68,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           parent_id?: string | null
           updated_at?: string
           user_id: string
@@ -76,6 +78,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           parent_id?: string | null
           updated_at?: string
           user_id?: string
@@ -286,6 +289,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string
           created_at: string
           email: string | null
           id: string
@@ -297,6 +301,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -308,6 +313,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -348,6 +354,30 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_ip_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip?: string
           user_id?: string
         }
         Relationships: []
