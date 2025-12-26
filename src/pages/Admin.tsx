@@ -44,6 +44,13 @@ interface Profile {
   last_login_ip: string | null;
 }
 
+interface IPLog {
+  id: string;
+  ip: string;
+  event_type: string;
+  created_at: string;
+}
+
 interface Article {
   id: string;
   title: string;
@@ -331,78 +338,13 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-4">
                     {users.map((profile) => (
-                      <div key={profile.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={profile.avatar_url || ''} />
-                            <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{profile.real_name}</p>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant={
-                                profile.status === 'approved' ? 'default' :
-                                profile.status === 'banned' ? 'destructive' :
-                                'secondary'
-                              }>
-                                {profile.status === 'approved' ? '已激活' :
-                                 profile.status === 'banned' ? '已封禁' :
-                                 profile.status === 'pending' ? '待审核' : '已拒绝'}
-                              </Badge>
-                              {profile.last_login_ip && (
-                                <span className="text-xs text-muted-foreground">
-                                  IP: {profile.last_login_ip}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        {profile.real_name !== '管理员' && (
-                          <div className="flex gap-2">
-                            {profile.status === 'banned' ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUnbanUser(profile)}
-                              >
-                                解封
-                              </Button>
-                            ) : profile.status === 'approved' && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleBanUser(profile)}
-                                className="gap-1"
-                              >
-                                <Ban className="w-4 h-4" />
-                                封禁
-                              </Button>
-                            )}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive" className="gap-1">
-                                  <Trash2 className="w-4 h-4" />
-                                  删除
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    此操作不可撤销，用户账户及其所有数据将被永久删除。
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>取消</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteUser(profile)}>
-                                    确认删除
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        )}
-                      </div>
+                      <UserCard 
+                        key={profile.id} 
+                        profile={profile} 
+                        onBan={handleBanUser}
+                        onUnban={handleUnbanUser}
+                        onDelete={handleDeleteUser}
+                      />
                     ))}
                   </div>
                 )}

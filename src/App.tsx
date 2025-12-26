@@ -12,6 +12,8 @@ import Admin from "./pages/Admin";
 import Editor from "./pages/Editor";
 import Search from "./pages/Search";
 import Article from "./pages/Article";
+import Articles from "./pages/Articles";
+import EditorProfile from "./pages/EditorProfile";
 import Settings from "./pages/Settings";
 import Drafts from "./pages/Drafts";
 import NotFound from "./pages/NotFound";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/editor" element={<Editor />} />
             <Route path="/search" element={<Search />} />
             <Route path="/article/:id" element={<Article />} />
+            <Route path="/articles" element={<Articles />} />
+            <Route path="/profile/:userId" element={<EditorProfile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/drafts" element={<Drafts />} />
             <Route path="*" element={<NotFound />} />
