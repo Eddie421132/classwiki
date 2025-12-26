@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AuthorBadge } from '@/components/AuthorBadge';
+import { ImageLightbox } from '@/components/ImageLightbox';
 import { toast } from 'sonner';
 import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff } from 'lucide-react';
 import {
@@ -135,6 +136,38 @@ export default function ArticlePage() {
 
   const canEdit = user && (user.id === article?.author_id || isAdmin);
 
+  // Add click handler for content images
+  useEffect(() => {
+    if (!article) return;
+
+    const handleImageClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' && target.closest('.prose')) {
+        const imgSrc = (target as HTMLImageElement).src;
+        // Create a modal for the image
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out';
+        modal.innerHTML = `
+          <button class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <img src="${imgSrc}" alt="" class="max-w-full max-h-full object-contain" />
+        `;
+        modal.onclick = () => modal.remove();
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+        
+        const cleanup = () => {
+          document.body.style.overflow = '';
+        };
+        modal.addEventListener('click', cleanup);
+      }
+    };
+
+    document.addEventListener('click', handleImageClick);
+    return () => document.removeEventListener('click', handleImageClick);
+  }, [article]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -164,7 +197,7 @@ export default function ArticlePage() {
 
           <article className="wiki-card animate-fade-in">
             {article.cover_image_url && (
-              <img
+              <ImageLightbox
                 src={article.cover_image_url}
                 alt={article.title}
                 className="w-full h-64 md:h-80 object-cover rounded-lg mb-6"
@@ -185,13 +218,20 @@ export default function ArticlePage() {
 
             <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-6 border-b border-border">
               <div className="flex items-center gap-4">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={article.profiles?.avatar_url || ''} />
-                  <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-                </Avatar>
+                <Link to={`/profile/${article.author_id}`}>
+                  <Avatar className="w-10 h-10 hover:ring-2 ring-primary transition-all">
+                    <AvatarImage src={article.profiles?.avatar_url || ''} />
+                    <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
+                  </Avatar>
+                </Link>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{article.profiles?.real_name || '未知作者'}</p>
+                    <Link 
+                      to={`/profile/${article.author_id}`}
+                      className="font-medium hover:text-primary transition-colors"
+                    >
+                      {article.profiles?.real_name || '未知作者'}
+                    </Link>
                     <AuthorBadge role={authorRole} size="sm" />
                   </div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -250,7 +290,7 @@ export default function ArticlePage() {
             </div>
 
             <div 
-              className="prose prose-lg max-w-none"
+              className="prose prose-lg max-w-none [&_img]:cursor-zoom-in"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content, {
                 ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
                 ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
