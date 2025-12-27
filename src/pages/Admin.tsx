@@ -238,10 +238,11 @@ export default function AdminPage() {
         `)
         .order('created_at', { ascending: false });
 
-      // Fetch user roles
-      const { data: rolesData } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
+      // Fetch privileged roles (admin + second_admin)
+      const { data: rolesData, error: rolesError } = await supabase
+        .rpc('get_admin_and_second_admin_roles');
+
+      if (rolesError) throw rolesError;
 
       setRequests(requestsData || []);
       setUsers(usersData || []);

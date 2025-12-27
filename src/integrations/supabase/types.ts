@@ -408,6 +408,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_and_second_admin_roles: {
+        Args: never
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       get_email_by_real_name: { Args: { _real_name: string }; Returns: string }
       has_role: {
         Args: {

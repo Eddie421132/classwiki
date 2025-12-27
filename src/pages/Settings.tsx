@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Upload, Loader2, User, Save, Trash2 } from 'lucide-react';
+import { Upload, Loader2, User, Save, Trash2, History } from 'lucide-react';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ export default function SettingsPage() {
         .getPublicUrl(fileName);
 
       setAvatarUrl(publicUrl);
-      
+
       // Update profile with new avatar
       const { error: updateError } = await supabase
         .from('profiles')
@@ -157,7 +157,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-md mx-auto">
           <Card className="wiki-card">
@@ -217,8 +217,8 @@ export default function SettingsPage() {
                 <Label>账号状态</Label>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    profile?.status === 'approved' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    profile?.status === 'approved'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       : profile?.status === 'banned'
                       ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                       : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
@@ -229,8 +229,8 @@ export default function SettingsPage() {
               </div>
 
               {/* Save Button */}
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 className="w-full gap-2"
                 disabled={isSaving}
               >
@@ -241,6 +241,21 @@ export default function SettingsPage() {
                 )}
                 保存修改
               </Button>
+
+              {/* Changelog */}
+              <div className="pt-6 border-t border-border space-y-2">
+                <Label>更新日志</Label>
+                <p className="text-sm text-muted-foreground">查看从以前到现在的所有更新记录。</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => navigate('/changelog')}
+                >
+                  <History className="w-4 h-4" />
+                  查看更新日志
+                </Button>
+              </div>
 
               {/* Delete Account Section */}
               <div className="pt-6 border-t border-border">
@@ -284,3 +299,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

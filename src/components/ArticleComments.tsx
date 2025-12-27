@@ -302,16 +302,14 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
           `)
           .eq('article_id', articleId)
           .order('created_at', { ascending: true }),
-        supabase
-          .from('user_roles')
-          .select('user_id, role')
+        supabase.rpc('get_admin_and_second_admin_roles')
       ]);
 
       if (commentsResult.error) throw commentsResult.error;
+      if (rolesResult.error) throw rolesResult.error;
       
-      // Set user roles
+      // Set user roles (only admin + second_admin are exposed)
       setUserRoles((rolesResult.data || []) as UserRole[]);
-      
       // Organize comments into tree structure
       const commentsMap = new Map<string, Comment>();
       const rootComments: Comment[] = [];

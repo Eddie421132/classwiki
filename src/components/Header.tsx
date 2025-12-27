@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History } from 'lucide-react';
+import { Shield, Edit, LogOut, User, Bell, Settings, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function Header() {
-  const { user, profile, isAdmin, isApprovedEditor, signOut, isLoading } = useAuth();
+  const { user, profile, isAdmin, isSecondAdmin, isApprovedEditor, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -20,7 +20,18 @@ export function Header() {
     navigate('/');
   };
 
-  const canEdit = isAdmin || isApprovedEditor;
+  const canEdit = isAdmin || isSecondAdmin || isApprovedEditor;
+  const canAccessAdmin = isAdmin || isSecondAdmin;
+
+  const roleLabel = isAdmin
+    ? '管理员'
+    : isSecondAdmin
+    ? '第二管理员'
+    : isApprovedEditor
+    ? '编者'
+    : profile?.status === 'user'
+    ? '普通用户'
+    : '待审核';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -28,23 +39,13 @@ export function Header() {
         <Link to="/" className="font-serif text-xl font-bold text-primary hover:opacity-80 transition-opacity">
           7班Wiki
         </Link>
-        
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/changelog')}
-            className="gap-2"
-          >
-            <History className="w-4 h-4" />
-            更新日志
-          </Button>
 
+        <div className="flex items-center gap-3">
           {isLoading ? (
             <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
           ) : user ? (
             <>
-              {isAdmin && (
+              {canAccessAdmin && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -55,7 +56,7 @@ export function Header() {
                   管理中心
                 </Button>
               )}
-              
+
               {canEdit && (
                 <Button
                   size="sm"
@@ -66,7 +67,7 @@ export function Header() {
                   发布文章
                 </Button>
               )}
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -81,9 +82,7 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-48">
                   <div className="px-2 py-1.5">
                     <p className="text-sm font-medium">{profile?.real_name || '用户'}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isAdmin ? '管理员' : isApprovedEditor ? '编者' : profile?.status === 'user' ? '普通用户' : '待审核'}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{roleLabel}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/settings')}>
@@ -138,3 +137,4 @@ export function Header() {
     </header>
   );
 }
+
