@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { checkIsAdmin, checkIsApprovedEditor, getUserProfile } from '@/lib/auth';
+import { checkIsAdmin, checkIsSecondAdmin, checkIsApprovedEditor, getUserProfile } from '@/lib/auth';
 
 interface Profile {
   id: string;
@@ -16,6 +16,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isSecondAdmin: boolean;
   isApprovedEditor: boolean;
   isRegularUser: boolean;
   isLoading: boolean;
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSecondAdmin, setIsSecondAdmin] = useState(false);
   const [isApprovedEditor, setIsApprovedEditor] = useState(false);
   const [isRegularUser, setIsRegularUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,13 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => {
     if (!user) return;
     
-    const [adminResult, editorResult, profileResult] = await Promise.all([
+    const [adminResult, secondAdminResult, editorResult, profileResult] = await Promise.all([
       checkIsAdmin(user.id),
+      checkIsSecondAdmin(user.id),
       checkIsApprovedEditor(user.id),
       getUserProfile(user.id)
     ]);
     
     setIsAdmin(adminResult);
+    setIsSecondAdmin(secondAdminResult);
     setIsApprovedEditor(editorResult);
     setProfile(profileResult.profile as Profile | null);
     setIsRegularUser(profileResult.profile?.status === 'user');
@@ -62,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setIsSecondAdmin(false);
           setIsApprovedEditor(false);
           setIsRegularUser(false);
         }
@@ -76,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setTimeout(() => {
           checkIsAdmin(session.user.id).then(setIsAdmin);
+          checkIsSecondAdmin(session.user.id).then(setIsSecondAdmin);
           checkIsApprovedEditor(session.user.id).then(setIsApprovedEditor);
           getUserProfile(session.user.id).then(({ profile }) => {
             setProfile(profile as Profile | null);
@@ -94,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setIsAdmin(false);
+    setIsSecondAdmin(false);
     setIsApprovedEditor(false);
     setIsRegularUser(false);
   };
@@ -104,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       isAdmin,
+      isSecondAdmin,
       isApprovedEditor,
       isRegularUser,
       isLoading,
