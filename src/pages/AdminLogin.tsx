@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -61,9 +61,19 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      // Sign in with user's own credentials
+      // First, get the email by username (real_name)
+      const { data: emailData, error: emailError } = await supabase
+        .rpc('get_email_by_real_name', { _real_name: username });
+
+      if (emailError || !emailData) {
+        setError('用户名不存在');
+        setIsLoading(false);
+        return;
+      }
+
+      // Sign in with user's credentials
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: emailData,
         password: userPassword,
       });
 
@@ -161,13 +171,13 @@ export default function AdminLoginPage() {
                     )}
                     
                     <div className="space-y-2">
-                      <Label htmlFor="second-email">邮箱</Label>
+                      <Label htmlFor="second-username">用户名</Label>
                       <Input
-                        id="second-email"
-                        type="email"
-                        placeholder="输入您的邮箱"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        id="second-username"
+                        type="text"
+                        placeholder="输入您的用户名（真实姓名）"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                       />
                     </div>
