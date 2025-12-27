@@ -36,16 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isRegularUser, setIsRegularUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshProfile = async () => {
-    if (!user) return;
-    
+  const refreshProfileForUserId = async (targetUserId: string) => {
     const [adminResult, secondAdminResult, editorResult, profileResult] = await Promise.all([
-      checkIsAdmin(user.id),
-      checkIsSecondAdmin(user.id),
-      checkIsApprovedEditor(user.id),
-      getUserProfile(user.id)
+      checkIsAdmin(targetUserId),
+      checkIsSecondAdmin(targetUserId),
+      checkIsApprovedEditor(targetUserId),
+      getUserProfile(targetUserId),
     ]);
-    
+
     setIsAdmin(adminResult);
     setIsSecondAdmin(secondAdminResult);
     setIsApprovedEditor(editorResult);
@@ -53,41 +51,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsRegularUser(profileResult.profile?.status === 'user');
   };
 
+  const refreshProfile = async () => {
+    if (!user?.id) return;
+    await refreshProfileForUserId(user.id);
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            refreshProfile();
-          }, 0);
-        } else {
-          setProfile(null);
-          setIsAdmin(false);
-          setIsSecondAdmin(false);
-          setIsApprovedEditor(false);
-          setIsRegularUser(false);
-        }
-        setIsLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        setTimeout(() => {
+          refreshProfileForUserId(session.user.id);
+        }, 0);
+      } else {
+        setProfile(null);
+        setIsAdmin(false);
+        setIsSecondAdmin(false);
+        setIsApprovedEditor(false);
+        setIsRegularUser(false);
       }
-    );
+
+      setIsLoading(false);
+    });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         setTimeout(() => {
-          checkIsAdmin(session.user.id).then(setIsAdmin);
-          checkIsSecondAdmin(session.user.id).then(setIsSecondAdmin);
-          checkIsApprovedEditor(session.user.id).then(setIsApprovedEditor);
-          getUserProfile(session.user.id).then(({ profile }) => {
-            setProfile(profile as Profile | null);
-          });
+          refreshProfileForUserId(session.user.id);
         }, 0);
       }
+
       setIsLoading(false);
     });
 
