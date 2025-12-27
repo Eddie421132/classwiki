@@ -10,7 +10,6 @@ import { Header } from '@/components/Header';
 import { toast } from 'sonner';
 import { Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { logUserIP } from '@/lib/ipLogger';
 
 export default function UserAuthPage() {
   const navigate = useNavigate();
@@ -58,11 +57,6 @@ export default function UserAuthPage() {
       });
 
       if (error) throw error;
-
-      // Log IP for login event
-      if (data.user) {
-        await logUserIP(data.user.id, 'login');
-      }
 
       toast.success('登录成功');
       await refreshProfile();
@@ -141,9 +135,6 @@ export default function UserAuthPage() {
           });
 
         if (profileError) throw profileError;
-
-        // Log IP for login event
-        await logUserIP(data.user.id, 'login');
 
         toast.success('注册成功！');
         await refreshProfile();

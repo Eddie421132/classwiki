@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Loader2, Send, ImageIcon, X, Save, FileText } from 'lucide-react';
 import { validateContent } from '@/lib/emojiValidator';
-import { logUserIP } from '@/lib/ipLogger';
 
 interface DraftData {
   id?: string;
@@ -175,9 +174,6 @@ export default function EditorPage() {
       });
 
       if (error) throw error;
-
-      // Log IP for publish event
-      await logUserIP(user!.id, 'publish');
 
       // Delete draft if exists
       if (draftId) {
