@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Edit, LogOut, User, Bell, Settings, FileText } from 'lucide-react';
+import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -30,6 +30,16 @@ export function Header() {
         </Link>
         
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/changelog')}
+            className="gap-2"
+          >
+            <History className="w-4 h-4" />
+            更新日志
+          </Button>
+
           {isLoading ? (
             <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
           ) : user ? (

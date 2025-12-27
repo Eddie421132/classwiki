@@ -16,6 +16,7 @@ import Articles from "./pages/Articles";
 import EditorProfile from "./pages/EditorProfile";
 import Settings from "./pages/Settings";
 import Drafts from "./pages/Drafts";
+import Changelog from "./pages/Changelog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/profile/:userId" element={<EditorProfile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/drafts" element={<Drafts />} />
+            <Route path="/changelog" element={<Changelog />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
