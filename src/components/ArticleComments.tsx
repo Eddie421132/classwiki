@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
+import { AuthorBadge } from '@/components/AuthorBadge';
 import { toast } from 'sonner';
 import { Loader2, MessageCircle, Reply, Trash2, User, ImageIcon, X } from 'lucide-react';
 
@@ -19,8 +20,14 @@ interface Comment {
   profiles: {
     real_name: string;
     avatar_url: string | null;
+    status: string;
   } | null;
   replies?: Comment[];
+}
+
+interface UserRole {
+  user_id: string;
+  role: string;
 }
 
 interface ArticleCommentsProps {
@@ -32,6 +39,7 @@ interface CommentItemProps {
   depth?: number;
   userId?: string;
   isAdmin: boolean;
+  userRoles: UserRole[];
   replyToId: string | null;
   replyContent: string;
   replyImage: string | null;
@@ -54,11 +62,35 @@ const formatDate = (dateString: string) => {
   });
 };
 
+// Helper to get user role for display
+const getUserRole = (userId: string, userRoles: UserRole[], profileStatus?: string): 'admin' | 'second_admin' | 'editor' | null => {
+  const roles = userRoles.filter(r => r.user_id === userId);
+  
+  // Check for admin first
+  if (roles.some(r => r.role === 'admin')) {
+    return 'admin';
+  }
+  
+  // Check for second admin
+  if (roles.some(r => r.role === 'second_admin')) {
+    return 'second_admin';
+  }
+  
+  // Check if approved editor (has profile with approved status)
+  if (profileStatus === 'approved') {
+    return 'editor';
+  }
+  
+  // Regular user - no badge
+  return null;
+};
+
 const CommentItem = memo(({ 
   comment, 
   depth = 0, 
   userId, 
   isAdmin,
+  userRoles,
   replyToId,
   replyContent,
   replyImage,
@@ -74,6 +106,8 @@ const CommentItem = memo(({
   const canDelete = userId && (userId === comment.user_id || isAdmin);
   const isReplying = replyToId === comment.id;
   const replyImageInputRef = useRef<HTMLInputElement>(null);
+  
+  const userRole = getUserRole(comment.user_id, userRoles, comment.profiles?.status);
 
   const handleReplyImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,6 +139,7 @@ const CommentItem = memo(({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm">{comment.profiles?.real_name || '未知用户'}</span>
+            <AuthorBadge role={userRole} size="sm" />
             <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
           </div>
           <p className="text-sm mt-1 whitespace-pre-wrap break-words">{comment.content}</p>
@@ -216,6 +251,7 @@ const CommentItem = memo(({
               depth={depth + 1}
               userId={userId}
               isAdmin={isAdmin}
+              userRoles={userRoles}
               replyToId={replyToId}
               replyContent={replyContent}
               replyImage={replyImage}
@@ -238,8 +274,9 @@ const CommentItem = memo(({
 CommentItem.displayName = 'CommentItem';
 
 export function ArticleComments({ articleId }: ArticleCommentsProps) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isSecondAdmin } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [newComment, setNewComment] = useState('');
   const [newCommentImage, setNewCommentImage] = useState<string | null>(null);
   const [replyToId, setReplyToId] = useState<string | null>(null);
@@ -256,27 +293,35 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
   const fetchComments = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('article_comments')
-        .select(`
-          *,
-          profiles!article_comments_user_id_fkey(real_name, avatar_url)
-        `)
-        .eq('article_id', articleId)
-        .order('created_at', { ascending: true });
+      const [commentsResult, rolesResult] = await Promise.all([
+        supabase
+          .from('article_comments')
+          .select(`
+            *,
+            profiles!article_comments_user_id_fkey(real_name, avatar_url, status)
+          `)
+          .eq('article_id', articleId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('user_roles')
+          .select('user_id, role')
+      ]);
 
-      if (error) throw error;
+      if (commentsResult.error) throw commentsResult.error;
+      
+      // Set user roles
+      setUserRoles((rolesResult.data || []) as UserRole[]);
       
       // Organize comments into tree structure
       const commentsMap = new Map<string, Comment>();
       const rootComments: Comment[] = [];
       
-      (data as unknown as Comment[])?.forEach(comment => {
+      (commentsResult.data as unknown as Comment[])?.forEach(comment => {
         comment.replies = [];
         commentsMap.set(comment.id, comment);
       });
       
-      (data as unknown as Comment[])?.forEach(comment => {
+      (commentsResult.data as unknown as Comment[])?.forEach(comment => {
         if (comment.parent_id) {
           const parent = commentsMap.get(comment.parent_id);
           if (parent) {
@@ -508,21 +553,26 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
           </div>
         </form>
       ) : (
-        <p className="text-muted-foreground text-sm">登录后可以发表评论</p>
+        <p className="text-muted-foreground text-center py-4">
+          请登录后发表评论
+        </p>
       )}
 
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <Loader2 className="w-6 h-6 animate-spin" />
         </div>
-      ) : comments.length > 0 ? (
-        <div className="divide-y divide-border">
+      ) : comments.length === 0 ? (
+        <p className="text-muted-foreground text-center py-8">暂无评论</p>
+      ) : (
+        <div className="divide-y">
           {comments.map(comment => (
             <CommentItem 
               key={comment.id} 
               comment={comment}
               userId={user?.id}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || isSecondAdmin}
+              userRoles={userRoles}
               replyToId={replyToId}
               replyContent={replyContent}
               replyImage={replyImage}
@@ -537,8 +587,6 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
             />
           ))}
         </div>
-      ) : (
-        <p className="text-center text-muted-foreground py-8">暂无评论</p>
       )}
     </div>
   );

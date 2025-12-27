@@ -11,6 +11,17 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
   return !!data && !error;
 }
 
+export async function checkIsSecondAdmin(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'second_admin')
+    .maybeSingle();
+  
+  return !!data && !error;
+}
+
 export async function checkIsApprovedEditor(userId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('profiles')

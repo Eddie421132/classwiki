@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Users, FileText, Bell, Check, X, Ban, Trash2, 
-  Loader2, User, Clock
+  Loader2, User, Clock, ShieldCheck
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -44,13 +44,6 @@ interface Profile {
   last_login_ip: string | null;
 }
 
-interface IPLog {
-  id: string;
-  ip: string;
-  event_type: string;
-  created_at: string;
-}
-
 interface Article {
   id: string;
   title: string;
@@ -59,38 +52,40 @@ interface Article {
   profiles: { real_name: string } | null;
 }
 
+interface UserRole {
+  user_id: string;
+  role: string;
+}
+
 interface UserCardProps {
   profile: Profile;
+  isMainAdmin: boolean;
+  isSecondAdmin: boolean;
+  userRoles: UserRole[];
+  adminUserIds: string[];
   onBan: (profile: Profile) => void;
   onUnban: (profile: Profile) => void;
   onDelete: (profile: Profile) => void;
+  onToggleSecondAdmin: (profile: Profile, isCurrentlySecondAdmin: boolean) => void;
 }
 
-function UserCard({ profile, onBan, onUnban, onDelete }: UserCardProps) {
-  const [ipLogs, setIpLogs] = useState<IPLog[]>([]);
-  const [showIpLogs, setShowIpLogs] = useState(false);
-  const [loadingIps, setLoadingIps] = useState(false);
-
-  const fetchIpLogs = async () => {
-    if (ipLogs.length > 0) {
-      setShowIpLogs(!showIpLogs);
-      return;
-    }
-    setLoadingIps(true);
-    try {
-      const { data } = await supabase
-        .from('user_ip_logs')
-        .select('*')
-        .eq('user_id', profile.user_id)
-        .order('created_at', { ascending: false });
-      setIpLogs(data || []);
-      setShowIpLogs(true);
-    } catch (error) {
-      console.error('Fetch IP logs error:', error);
-    } finally {
-      setLoadingIps(false);
-    }
-  };
+function UserCard({ 
+  profile, 
+  isMainAdmin, 
+  isSecondAdmin, 
+  userRoles, 
+  adminUserIds,
+  onBan, 
+  onUnban, 
+  onDelete,
+  onToggleSecondAdmin
+}: UserCardProps) {
+  const isUserAdmin = adminUserIds.includes(profile.user_id);
+  const isUserSecondAdmin = userRoles.some(r => r.user_id === profile.user_id && r.role === 'second_admin');
+  
+  // Second admin cannot ban/delete main admin
+  const canBanUser = isMainAdmin || (!isSecondAdmin || !isUserAdmin);
+  const canDeleteUser = isMainAdmin; // Only main admin can delete
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
@@ -102,30 +97,32 @@ function UserCard({ profile, onBan, onUnban, onDelete }: UserCardProps) {
     });
   };
 
-  const getEventTypeLabel = (type: string) => {
-    switch (type) {
-      case 'login': return '登录';
-      case 'register': return '注册';
-      case 'publish': return '发布';
-      case 'comment': return '评论';
-      default: return type;
-    }
-  };
-
   return (
     <div className="border rounded-lg">
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 flex-wrap gap-3">
         <div className="flex items-center gap-4">
           <Avatar className="w-12 h-12">
             <AvatarImage src={profile.avatar_url || ''} />
             <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
           </Avatar>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="font-medium">{profile.real_name}</p>
               <Badge variant={profile.status === 'approved' ? 'default' : profile.status === 'banned' ? 'destructive' : 'secondary'}>
                 {profile.status === 'approved' ? '已批准' : profile.status === 'banned' ? '已封禁' : '待审核'}
               </Badge>
+              {isUserAdmin && (
+                <Badge variant="outline" className="gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  管理员
+                </Badge>
+              )}
+              {isUserSecondAdmin && (
+                <Badge variant="outline" className="gap-1 bg-blue-500/10 text-blue-600 border-blue-500/30">
+                  <ShieldCheck className="w-3 h-3" />
+                  第二管理员
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -133,85 +130,85 @@ function UserCard({ profile, onBan, onUnban, onDelete }: UserCardProps) {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={fetchIpLogs} disabled={loadingIps}>
-            {loadingIps ? <Loader2 className="w-4 h-4 animate-spin" /> : 'IP记录'}
-          </Button>
-          {profile.status === 'banned' ? (
-            <Button size="sm" variant="outline" onClick={() => onUnban(profile)}>
-              解封
-            </Button>
-          ) : (
-            <Button size="sm" variant="outline" onClick={() => onBan(profile)} className="gap-1">
-              <Ban className="w-4 h-4" />
-              封禁
+        <div className="flex gap-2 flex-wrap">
+          {/* Only main admin can set second admin, and not for other main admins */}
+          {isMainAdmin && !isUserAdmin && (
+            <Button 
+              size="sm" 
+              variant={isUserSecondAdmin ? "secondary" : "outline"}
+              onClick={() => onToggleSecondAdmin(profile, isUserSecondAdmin)}
+              className="gap-1"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {isUserSecondAdmin ? '取消第二管理员' : '设为第二管理员'}
             </Button>
           )}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="destructive" className="gap-1">
-                <Trash2 className="w-4 h-4" />
-                删除
+          {canBanUser && (
+            profile.status === 'banned' ? (
+              <Button size="sm" variant="outline" onClick={() => onUnban(profile)}>
+                解封
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
-                <AlertDialogDescription>
-                  此操作不可撤销，用户及其所有数据将被永久删除。
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(profile)}>
-                  确认删除
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => onBan(profile)} className="gap-1">
+                <Ban className="w-4 h-4" />
+                封禁
+              </Button>
+            )
+          )}
+          {canDeleteUser && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="destructive" className="gap-1">
+                  <Trash2 className="w-4 h-4" />
+                  删除
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    此操作不可撤销，用户及其所有数据将被永久删除。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>取消</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(profile)}>
+                    确认删除
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
-      {showIpLogs && (
-        <div className="border-t px-4 py-3 bg-muted/30">
-          <p className="text-sm font-medium mb-2">IP记录 ({ipLogs.length})</p>
-          {ipLogs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">暂无IP记录</p>
-          ) : (
-            <div className="space-y-1 max-h-40 overflow-y-auto">
-              {ipLogs.map((log) => (
-                <div key={log.id} className="text-sm flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">{getEventTypeLabel(log.event_type)}</Badge>
-                  <span className="font-mono">{log.ip}</span>
-                  <span className="text-muted-foreground">· {formatDate(log.created_at)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
 export default function AdminPage() {
   const navigate = useNavigate();
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isSecondAdmin, isLoading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [adminUserIds, setAdminUserIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      navigate('/admin-login');
-    }
-  }, [user, isAdmin, authLoading, navigate]);
+  const isMainAdmin = isAdmin && !isSecondAdmin;
+  const canAccessAdmin = isAdmin || isSecondAdmin;
 
   useEffect(() => {
-    if (user && isAdmin) {
+    if (!authLoading && (!user || !canAccessAdmin)) {
+      navigate('/admin-login');
+    }
+  }, [user, canAccessAdmin, authLoading, navigate]);
+
+  useEffect(() => {
+    if (user && canAccessAdmin) {
       fetchData();
     }
-  }, [user, isAdmin]);
+  }, [user, canAccessAdmin]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -241,9 +238,21 @@ export default function AdminPage() {
         `)
         .order('created_at', { ascending: false });
 
+      // Fetch user roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
       setRequests(requestsData || []);
       setUsers(usersData || []);
       setArticles((articlesData || []) as unknown as Article[]);
+      setUserRoles((rolesData || []) as UserRole[]);
+      
+      // Get main admin user IDs
+      const adminIds = (rolesData || [])
+        .filter((r: any) => r.role === 'admin')
+        .map((r: any) => r.user_id);
+      setAdminUserIds(adminIds);
     } catch (error) {
       console.error('Fetch error:', error);
       toast.error('加载数据失败');
@@ -295,6 +304,12 @@ export default function AdminPage() {
   };
 
   const handleBanUser = async (profile: Profile) => {
+    // Second admin cannot ban main admin
+    if (isSecondAdmin && adminUserIds.includes(profile.user_id)) {
+      toast.error('无法封禁正式管理员');
+      return;
+    }
+    
     try {
       await supabase
         .from('profiles')
@@ -325,6 +340,12 @@ export default function AdminPage() {
   };
 
   const handleDeleteArticle = async (article: Article) => {
+    // Second admin cannot delete main admin's articles
+    if (isSecondAdmin && adminUserIds.includes(article.author_id)) {
+      toast.error('无法删除正式管理员的文章');
+      return;
+    }
+    
     try {
       await supabase.from('articles').delete().eq('id', article.id);
       toast.success('文章已删除');
@@ -336,6 +357,11 @@ export default function AdminPage() {
   };
 
   const handleDeleteUser = async (profile: Profile) => {
+    if (!isMainAdmin) {
+      toast.error('只有正式管理员才能删除用户');
+      return;
+    }
+    
     try {
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { targetUserId: profile.user_id }
@@ -352,6 +378,38 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleSecondAdmin = async (profile: Profile, isCurrentlySecondAdmin: boolean) => {
+    if (!isMainAdmin) {
+      toast.error('只有正式管理员才能设置第二管理员');
+      return;
+    }
+    
+    try {
+      if (isCurrentlySecondAdmin) {
+        // Remove second admin role
+        await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', profile.user_id)
+          .eq('role', 'second_admin');
+        toast.success(`已取消 ${profile.real_name} 的第二管理员权限`);
+      } else {
+        // Add second admin role
+        await supabase
+          .from('user_roles')
+          .insert({
+            user_id: profile.user_id,
+            role: 'second_admin'
+          });
+        toast.success(`已设置 ${profile.real_name} 为第二管理员`);
+      }
+      fetchData();
+    } catch (error) {
+      console.error('Toggle second admin error:', error);
+      toast.error('操作失败');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -362,7 +420,14 @@ export default function AdminPage() {
     });
   };
 
-  if (authLoading || !user || !isAdmin) {
+  // Check if article can be deleted by current user
+  const canDeleteArticle = (article: Article) => {
+    if (isMainAdmin) return true;
+    if (isSecondAdmin && !adminUserIds.includes(article.author_id)) return true;
+    return false;
+  };
+
+  if (authLoading || !user || !canAccessAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -377,7 +442,9 @@ export default function AdminPage() {
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold mb-2">管理中心</h1>
-          <p className="text-muted-foreground">管理用户、文章和审核申请</p>
+          <p className="text-muted-foreground">
+            {isMainAdmin ? '正式管理员' : '第二管理员'} - 管理用户、文章和审核申请
+          </p>
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
@@ -475,9 +542,14 @@ export default function AdminPage() {
                       <UserCard 
                         key={profile.id} 
                         profile={profile} 
+                        isMainAdmin={isMainAdmin}
+                        isSecondAdmin={isSecondAdmin}
+                        userRoles={userRoles}
+                        adminUserIds={adminUserIds}
                         onBan={handleBanUser}
                         onUnban={handleUnbanUser}
                         onDelete={handleDeleteUser}
+                        onToggleSecondAdmin={handleToggleSecondAdmin}
                       />
                     ))}
                   </div>
@@ -504,33 +576,40 @@ export default function AdminPage() {
                     {articles.map((article) => (
                       <div key={article.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div>
-                          <p className="font-medium">{article.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{article.title}</p>
+                            {adminUserIds.includes(article.author_id) && (
+                              <Badge variant="outline" className="text-xs">管理员文章</Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             作者: {article.profiles?.real_name || '未知'} · {formatDate(article.created_at)}
                           </p>
                         </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" className="gap-1">
-                              <Trash2 className="w-4 h-4" />
-                              删除
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>确认删除文章？</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                此操作不可撤销，文章将被永久删除。
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>取消</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteArticle(article)}>
-                                确认删除
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {canDeleteArticle(article) && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" className="gap-1">
+                                <Trash2 className="w-4 h-4" />
+                                删除
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>确认删除文章？</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  此操作不可撤销，文章将被永久删除。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteArticle(article)}>
+                                  确认删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     ))}
                   </div>
