@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { toast } from 'sonner';
 import { Loader2, MessageCircle, Reply, Trash2, User, ImageIcon, X } from 'lucide-react';
-import { logUserIP } from '@/lib/ipLogger';
 
 interface Comment {
   id: string;
@@ -368,9 +367,6 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
 
       if (error) throw error;
 
-      // Log IP for comment event
-      await logUserIP(user.id, 'comment');
-
       setNewComment('');
       setNewCommentImage(null);
       toast.success('评论发布成功');
@@ -409,9 +405,6 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
         });
 
       if (error) throw error;
-
-      // Log IP for comment event
-      await logUserIP(user.id, 'comment');
 
       setReplyContent('');
       setReplyImage(null);

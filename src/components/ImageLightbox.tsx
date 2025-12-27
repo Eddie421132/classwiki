@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ImageLightboxProps {
@@ -26,6 +27,30 @@ export function ImageLightbox({ src, alt = '', className = '' }: ImageLightboxPr
     };
   }, [isOpen]);
 
+  const lightboxContent = (
+    <div
+      className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
+      onClick={() => setIsOpen(false)}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+    >
+      <button
+        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-[10000]"
+        onClick={() => setIsOpen(false)}
+      >
+        <X className="w-8 h-8" />
+      </button>
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-[90vw] max-h-[90vh] object-contain"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(false);
+        }}
+      />
+    </div>
+  );
+
   return (
     <>
       <img
@@ -35,28 +60,7 @@ export function ImageLightbox({ src, alt = '', className = '' }: ImageLightboxPr
         onClick={() => setIsOpen(true)}
       />
       
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setIsOpen(false)}
-        >
-          <button
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="w-8 h-8" />
-          </button>
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-full object-contain cursor-zoom-out"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsOpen(false);
-            }}
-          />
-        </div>
-      )}
+      {isOpen && createPortal(lightboxContent, document.body)}
     </>
   );
 }
