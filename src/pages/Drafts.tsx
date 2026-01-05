@@ -69,9 +69,7 @@ export default function DraftsPage() {
   };
 
   const handleEdit = (draft: Draft) => {
-    // Store draft data in sessionStorage and navigate to editor
-    sessionStorage.setItem('edit-draft', JSON.stringify(draft));
-    navigate('/editor');
+    navigate(`/editor?draft=${draft.id}`);
   };
 
   const handlePublish = async (draft: Draft) => {

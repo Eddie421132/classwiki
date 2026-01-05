@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Edit, LogOut, User, Bell, Settings, FileText } from 'lucide-react';
+import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -95,6 +95,10 @@ export function Header() {
                       草稿箱
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuItem onClick={() => navigate('/changelog')}>
+                    <History className="w-4 h-4 mr-2" />
+                    更新日志
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
                     退出登录

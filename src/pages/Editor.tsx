@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RichTextEditor } from '@/components/RichTextEditor';
@@ -18,6 +18,7 @@ interface DraftData {
 
 export default function EditorPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAdmin, isApprovedEditor, isLoading: authLoading } = useAuth();
   const [draftId, setDraftId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -26,28 +27,71 @@ export default function EditorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Load draft from sessionStorage on mount
+  // Load draft (URL param preferred; legacy sessionStorage fallback)
   useEffect(() => {
-    const savedDraft = sessionStorage.getItem('edit-draft');
-    if (savedDraft) {
+    const params = new URLSearchParams(location.search);
+    const draftFromQuery = params.get('draft');
+
+    const loadFromSessionStorage = () => {
+      const savedDraft = sessionStorage.getItem('edit-draft');
+      if (!savedDraft) return;
       try {
         const draft: DraftData = JSON.parse(savedDraft);
         setDraftId(draft.id || null);
         setTitle(draft.title || '');
         setContent(draft.content || '');
         setCoverImage(draft.cover_image_url || null);
-        sessionStorage.removeItem('edit-draft');
       } catch (e) {
         console.error('Failed to load draft:', e);
+      } finally {
+        sessionStorage.removeItem('edit-draft');
       }
+    };
+
+    if (!draftFromQuery) {
+      loadFromSessionStorage();
+      return;
     }
-  }, []);
+
+    if (!user) return;
+
+    const loadFromDb = async () => {
+      setIsLoadingDraft(true);
+      try {
+        const { data, error } = await supabase
+          .from('article_drafts')
+          .select('id,title,content,cover_image_url')
+          .eq('id', draftFromQuery)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data) {
+          toast.error('草稿不存在或无权限访问');
+          return;
+        }
+
+        setDraftId(data.id);
+        setTitle(data.title || '');
+        setContent(data.content || '');
+        setCoverImage(data.cover_image_url || null);
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+        toast.error('加载草稿失败');
+      } finally {
+        setIsLoadingDraft(false);
+      }
+    };
+
+    loadFromDb();
+  }, [location.search, user]);
 
   // Auto-save draft every 30 seconds
-  const saveDraft = useCallback(async () => {
-    if (!user || (!title.trim() && !content.trim())) return;
+  const saveDraft = useCallback(async ({ notify = false }: { notify?: boolean } = {}) => {
+    if (!user || (!title.trim() && !content.trim())) return true;
 
     setIsSaving(true);
     try {
@@ -79,9 +123,13 @@ export default function EditorPage() {
         if (error) throw error;
         if (data) setDraftId(data.id);
       }
+
       setLastSaved(new Date().toISOString());
+      return true;
     } catch (error) {
       console.error('Save draft error:', error);
+      if (notify) toast.error('草稿保存失败');
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -90,7 +138,7 @@ export default function EditorPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (title.trim() || content.trim()) {
-        saveDraft();
+        void saveDraft();
       }
     }, 30000);
     return () => clearInterval(interval);
@@ -140,8 +188,8 @@ export default function EditorPage() {
   };
 
   const handleSaveDraft = async () => {
-    await saveDraft();
-    toast.success('草稿已保存');
+    const ok = await saveDraft({ notify: true });
+    if (ok) toast.success('草稿已保存');
   };
 
   const handleSubmit = async () => {
@@ -192,8 +240,8 @@ export default function EditorPage() {
 
   const handleExit = async () => {
     if (title.trim() || content.trim()) {
-      await saveDraft();
-      toast.success('草稿已自动保存');
+      const ok = await saveDraft();
+      if (ok) toast.success('草稿已自动保存');
     }
     navigate('/');
   };
@@ -207,13 +255,14 @@ export default function EditorPage() {
     });
   };
 
-  if (authLoading || !user || (!isAdmin && !isApprovedEditor)) {
+  if (authLoading || isLoadingDraft || !user || (!isAdmin && !isApprovedEditor)) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
+
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col">
