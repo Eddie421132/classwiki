@@ -56,6 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshProfileForUserId(user.id);
   };
 
+  const logUserIpOnLogin = async () => {
+    try {
+      await supabase.functions.invoke('log-user-ip', {
+        body: { event_type: 'login' },
+      });
+    } catch (e) {
+      // Non-blocking: IP logging should never break auth UX
+      console.warn('Failed to log user ip:', e);
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
@@ -65,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => {
           refreshProfileForUserId(session.user.id);
         }, 0);
+
+        if (event === 'SIGNED_IN') {
+          void logUserIpOnLogin();
+        }
       } else {
         setProfile(null);
         setIsAdmin(false);
@@ -128,3 +143,4 @@ export function useAuth() {
   }
   return context;
 }
+

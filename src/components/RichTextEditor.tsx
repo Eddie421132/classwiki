@@ -7,7 +7,7 @@ import {
   List, ListOrdered, Quote, Undo, Redo, ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isApplyingExternalContentRef = useRef(false);
   const { user } = useAuth();
 
   const editor = useEditor({
@@ -35,9 +36,23 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     ],
     content,
     onUpdate: ({ editor }) => {
+      if (isApplyingExternalContentRef.current) return;
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const next = content || '<p></p>';
+    const current = editor.getHTML();
+
+    if (next !== current) {
+      isApplyingExternalContentRef.current = true;
+      editor.commands.setContent(next, false);
+      isApplyingExternalContentRef.current = false;
+    }
+  }, [editor, content]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

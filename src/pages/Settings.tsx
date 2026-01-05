@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Upload, Loader2, User, Save, Trash2, History } from 'lucide-react';
+import { Upload, Loader2, User, Save, Trash2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -241,21 +241,6 @@ export default function SettingsPage() {
                 )}
                 保存修改
               </Button>
-
-              {/* Changelog */}
-              <div className="pt-6 border-t border-border space-y-2">
-                <Label>更新日志</Label>
-                <p className="text-sm text-muted-foreground">查看从以前到现在的所有更新记录。</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={() => navigate('/changelog')}
-                >
-                  <History className="w-4 h-4" />
-                  查看更新日志
-                </Button>
-              </div>
 
               {/* Delete Account Section */}
               <div className="pt-6 border-t border-border">
