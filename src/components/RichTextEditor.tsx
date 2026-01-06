@@ -1,13 +1,13 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import Youtube from '@tiptap/extension-youtube';
 import Placeholder from '@tiptap/extension-placeholder';
 import { 
   Bold, Italic, Strikethrough, Code, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Undo, Redo, ImageIcon
+  List, ListOrdered, Quote, Undo, Redo, ImageIcon, Video, Loader2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -19,7 +19,9 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const isApplyingExternalContentRef = useRef(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const { user } = useAuth();
 
   const editor = useEditor({
@@ -29,6 +31,13 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         HTMLAttributes: {
           class: 'rounded-lg max-w-full h-auto',
         },
+      }),
+      Youtube.configure({
+        HTMLAttributes: {
+          class: 'rounded-lg w-full aspect-video',
+        },
+        width: 640,
+        height: 360,
       }),
       Placeholder.configure({
         placeholder: '开始编写你的文章...',
@@ -92,21 +101,75 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     e.target.value = '';
   };
 
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !editor) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error('请选择视频文件');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('视频大小不能超过50MB');
+      return;
+    }
+
+    setIsUploadingVideo(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/videos/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('articles')
+        .upload(fileName, file, {
+          contentType: file.type,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('articles')
+        .getPublicUrl(fileName);
+
+      // Insert video as HTML (native video element)
+      editor.chain().focus().insertContent(`
+        <p><video controls style="max-width: 100%; border-radius: 8px;">
+          <source src="${publicUrl}" type="${file.type}">
+          您的浏览器不支持视频播放
+        </video></p>
+      `).run();
+      
+      toast.success('视频上传成功');
+    } catch (error) {
+      console.error('Video upload error:', error);
+      toast.error('视频上传失败');
+    } finally {
+      setIsUploadingVideo(false);
+    }
+
+    e.target.value = '';
+  };
+
   if (!editor) return null;
 
   const ToolbarButton = ({ 
     onClick, 
     isActive = false, 
+    disabled = false,
     children 
   }: { 
     onClick: () => void; 
     isActive?: boolean; 
+    disabled?: boolean;
     children: React.ReactNode;
   }) => (
     <button
       type="button"
       onClick={onClick}
-      className={`p-2 rounded hover:bg-muted transition-colors ${
+      disabled={disabled}
+      className={`p-2 rounded hover:bg-muted transition-colors disabled:opacity-50 ${
         isActive ? 'bg-primary text-primary-foreground' : ''
       }`}
     >
@@ -190,6 +253,17 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           <ImageIcon className="w-4 h-4" />
         </ToolbarButton>
         
+        <ToolbarButton 
+          onClick={() => videoInputRef.current?.click()}
+          disabled={isUploadingVideo}
+        >
+          {isUploadingVideo ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Video className="w-4 h-4" />
+          )}
+        </ToolbarButton>
+        
         <div className="flex-1" />
         
         <ToolbarButton
@@ -213,6 +287,13 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         type="file"
         accept="image/*"
         onChange={handleImageUpload}
+        className="hidden"
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleVideoUpload}
         className="hidden"
       />
     </div>

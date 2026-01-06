@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RichTextEditor } from '@/components/RichTextEditor';
+import { AudioUploadButton } from '@/components/AudioUploadButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ interface DraftData {
   title: string;
   content: string;
   cover_image_url: string | null;
+  background_music_url: string | null;
 }
 
 export default function EditorPage() {
@@ -24,8 +26,10 @@ export default function EditorPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [backgroundMusic, setBackgroundMusic] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingMusic, setIsUploadingMusic] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +48,7 @@ export default function EditorPage() {
         setTitle(draft.title || '');
         setContent(draft.content || '');
         setCoverImage(draft.cover_image_url || null);
+        setBackgroundMusic(draft.background_music_url || null);
       } catch (e) {
         console.error('Failed to load draft:', e);
       } finally {
@@ -63,7 +68,7 @@ export default function EditorPage() {
       try {
         const { data, error } = await supabase
           .from('article_drafts')
-          .select('id,title,content,cover_image_url')
+          .select('id,title,content,cover_image_url,background_music_url')
           .eq('id', draftFromQuery)
           .eq('user_id', user.id)
           .maybeSingle();
@@ -78,6 +83,7 @@ export default function EditorPage() {
         setTitle(data.title || '');
         setContent(data.content || '');
         setCoverImage(data.cover_image_url || null);
+        setBackgroundMusic(data.background_music_url || null);
       } catch (e) {
         console.error('Failed to load draft:', e);
         toast.error('加载草稿失败');
@@ -103,6 +109,7 @@ export default function EditorPage() {
             title: title.trim(),
             content,
             cover_image_url: coverImage,
+            background_music_url: backgroundMusic,
           })
           .eq('id', draftId);
 
@@ -116,6 +123,7 @@ export default function EditorPage() {
             title: title.trim(),
             content,
             cover_image_url: coverImage,
+            background_music_url: backgroundMusic,
           })
           .select('id')
           .single();
@@ -133,7 +141,7 @@ export default function EditorPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [user, draftId, title, content, coverImage]);
+  }, [user, draftId, title, content, coverImage, backgroundMusic]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -142,7 +150,7 @@ export default function EditorPage() {
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [title, content, coverImage, saveDraft]);
+  }, [title, content, coverImage, backgroundMusic, saveDraft]);
 
   useEffect(() => {
     if (!authLoading && (!user || (!isAdmin && !isApprovedEditor))) {
@@ -217,6 +225,7 @@ export default function EditorPage() {
         title: title.trim(),
         content,
         cover_image_url: coverImage,
+        background_music_url: backgroundMusic,
         author_id: user!.id,
         published: true,
       });
@@ -263,7 +272,6 @@ export default function EditorPage() {
     );
   }
 
-
   return (
     <div className="fixed inset-0 bg-background flex flex-col">
       {/* Header Bar */}
@@ -296,6 +304,13 @@ export default function EditorPage() {
             )}
             发布
           </Button>
+          <AudioUploadButton
+            userId={user.id}
+            currentUrl={backgroundMusic}
+            onUpload={setBackgroundMusic}
+            isLoading={isUploadingMusic}
+            setIsLoading={setIsUploadingMusic}
+          />
         </div>
       </header>
 

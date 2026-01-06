@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AuthorBadge } from '@/components/AuthorBadge';
 import { ImageLightbox } from '@/components/ImageLightbox';
+import { BackgroundMusicPlayer } from '@/components/BackgroundMusicPlayer';
 import { toast } from 'sonner';
 import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff } from 'lucide-react';
 import {
@@ -30,6 +31,7 @@ interface Article {
   title: string;
   content: string;
   cover_image_url: string | null;
+  background_music_url: string | null;
   author_id: string;
   created_at: string;
   updated_at: string;
@@ -290,11 +292,11 @@ export default function ArticlePage() {
             </div>
 
             <div 
-              className="prose prose-lg max-w-none [&_img]:cursor-zoom-in"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content, {
-                ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
-                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
-              }) }}
+            className="prose prose-lg max-w-none [&_img]:cursor-zoom-in [&_video]:max-w-full [&_video]:rounded-lg"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content, {
+              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'video', 'source', 'div', 'iframe'],
+              ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel', 'controls', 'type', 'style', 'width', 'height', 'allowfullscreen', 'frameborder'],
+            }) }}
             />
 
             <div className="mt-8 pt-6 border-t border-border">
@@ -307,6 +309,9 @@ export default function ArticlePage() {
           </article>
         </div>
       </main>
+      
+      {/* Background Music Player */}
+      <BackgroundMusicPlayer musicUrl={article.background_music_url} />
     </div>
   );
 }

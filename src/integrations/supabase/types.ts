@@ -109,6 +109,7 @@ export type Database = {
       }
       article_drafts: {
         Row: {
+          background_music_url: string | null
           content: string
           cover_image_url: string | null
           created_at: string
@@ -118,6 +119,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          background_music_url?: string | null
           content?: string
           cover_image_url?: string | null
           created_at?: string
@@ -127,6 +129,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          background_music_url?: string | null
           content?: string
           cover_image_url?: string | null
           created_at?: string
@@ -176,6 +179,7 @@ export type Database = {
       articles: {
         Row: {
           author_id: string
+          background_music_url: string | null
           content: string
           cover_image_url: string | null
           created_at: string
@@ -188,6 +192,7 @@ export type Database = {
         }
         Insert: {
           author_id: string
+          background_music_url?: string | null
           content: string
           cover_image_url?: string | null
           created_at?: string
@@ -200,6 +205,7 @@ export type Database = {
         }
         Update: {
           author_id?: string
+          background_music_url?: string | null
           content?: string
           cover_image_url?: string | null
           created_at?: string
