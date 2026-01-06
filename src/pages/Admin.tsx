@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Users, FileText, Bell, Check, X, Ban, Trash2, 
-  Loader2, User, Clock, ShieldCheck
+  Loader2, User, Clock, ShieldCheck, MapPin
 } from 'lucide-react';
+import { UserIpDialog } from '@/components/UserIpDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +68,7 @@ interface UserCardProps {
   onUnban: (profile: Profile) => void;
   onDelete: (profile: Profile) => void;
   onToggleSecondAdmin: (profile: Profile, isCurrentlySecondAdmin: boolean) => void;
+  canViewIp: boolean;
 }
 
 function UserCard({ 
@@ -78,7 +80,8 @@ function UserCard({
   onBan, 
   onUnban, 
   onDelete,
-  onToggleSecondAdmin
+  onToggleSecondAdmin,
+  canViewIp
 }: UserCardProps) {
   const isUserAdmin = adminUserIds.includes(profile.user_id);
   const isUserSecondAdmin = userRoles.some(r => r.user_id === profile.user_id && r.role === 'second_admin');
@@ -131,6 +134,15 @@ function UserCard({
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {/* IP record button */}
+          {canViewIp && (
+            <UserIpDialog userId={profile.user_id} userName={profile.real_name}>
+              <Button size="sm" variant="outline" className="gap-1">
+                <MapPin className="w-4 h-4" />
+                IP记录
+              </Button>
+            </UserIpDialog>
+          )}
           {/* Only main admin can set second admin, and not for other main admins */}
           {isMainAdmin && !isUserAdmin && (
             <Button 
@@ -539,20 +551,26 @@ export default function AdminPage() {
                   <p className="text-center text-muted-foreground py-8">暂无用户</p>
                 ) : (
                   <div className="space-y-4">
-                    {users.map((profile) => (
-                      <UserCard 
-                        key={profile.id} 
-                        profile={profile} 
-                        isMainAdmin={isMainAdmin}
-                        isSecondAdmin={isSecondAdmin}
-                        userRoles={userRoles}
-                        adminUserIds={adminUserIds}
-                        onBan={handleBanUser}
-                        onUnban={handleUnbanUser}
-                        onDelete={handleDeleteUser}
-                        onToggleSecondAdmin={handleToggleSecondAdmin}
-                      />
-                    ))}
+                    {users.map((profile) => {
+                      const isProfileAdmin = adminUserIds.includes(profile.user_id);
+                      // Main admin can see all IPs; second admin can see non-admin IPs
+                      const canViewIp = isMainAdmin || (isSecondAdmin && !isProfileAdmin);
+                      return (
+                        <UserCard 
+                          key={profile.id} 
+                          profile={profile} 
+                          isMainAdmin={isMainAdmin}
+                          isSecondAdmin={isSecondAdmin}
+                          userRoles={userRoles}
+                          adminUserIds={adminUserIds}
+                          onBan={handleBanUser}
+                          onUnban={handleUnbanUser}
+                          onDelete={handleDeleteUser}
+                          onToggleSecondAdmin={handleToggleSecondAdmin}
+                          canViewIp={canViewIp}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
