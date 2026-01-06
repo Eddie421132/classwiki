@@ -49,7 +49,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
     if (next !== current) {
       isApplyingExternalContentRef.current = true;
-      editor.commands.setContent(next, false);
+      editor.commands.setContent(next, { emitUpdate: false });
       isApplyingExternalContentRef.current = false;
     }
   }, [editor, content]);
