@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { AuthorBadge } from '@/components/AuthorBadge';
 import { toast } from 'sonner';
-import { Loader2, MessageCircle, Reply, Trash2, User, ImageIcon, X } from 'lucide-react';
+import { Loader2, MessageCircle, Reply, Trash2, User, ImageIcon, Video, X } from 'lucide-react';
 
 interface Comment {
   id: string;
@@ -16,6 +16,7 @@ interface Comment {
   parent_id: string | null;
   content: string;
   image_url: string | null;
+  video_url: string | null;
   created_at: string;
   profiles: {
     real_name: string;
@@ -43,14 +44,17 @@ interface CommentItemProps {
   replyToId: string | null;
   replyContent: string;
   replyImage: string | null;
+  replyVideo: string | null;
   isSubmitting: boolean;
   onReplyClick: (id: string, name: string) => void;
   onReplyContentChange: (value: string) => void;
   onReplyImageChange: (url: string | null) => void;
+  onReplyVideoChange: (url: string | null) => void;
   onSubmitReply: (parentId: string) => void;
   onCancelReply: () => void;
   onDelete: (commentId: string) => void;
   onImageUpload: (file: File) => Promise<string | null>;
+  onVideoUpload: (file: File) => Promise<string | null>;
 }
 
 const formatDate = (dateString: string) => {
@@ -94,18 +98,22 @@ const CommentItem = memo(({
   replyToId,
   replyContent,
   replyImage,
+  replyVideo,
   isSubmitting,
   onReplyClick,
   onReplyContentChange,
   onReplyImageChange,
+  onReplyVideoChange,
   onSubmitReply,
   onCancelReply,
   onDelete,
-  onImageUpload
+  onImageUpload,
+  onVideoUpload
 }: CommentItemProps) => {
   const canDelete = userId && (userId === comment.user_id || isAdmin);
   const isReplying = replyToId === comment.id;
   const replyImageInputRef = useRef<HTMLInputElement>(null);
+  const replyVideoInputRef = useRef<HTMLInputElement>(null);
   
   const userRole = getUserRole(comment.user_id, userRoles, comment.profiles?.status);
 
@@ -126,6 +134,26 @@ const CommentItem = memo(({
     const url = await onImageUpload(file);
     if (url) {
       onReplyImageChange(url);
+    }
+  };
+
+  const handleReplyVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error('请选择视频文件');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('视频大小不能超过50MB');
+      return;
+    }
+
+    const url = await onVideoUpload(file);
+    if (url) {
+      onReplyVideoChange(url);
     }
   };
   
@@ -151,6 +179,19 @@ const CommentItem = memo(({
                 alt="评论图片" 
                 className="max-w-xs max-h-48 object-cover rounded-lg"
               />
+            </div>
+          )}
+
+          {comment.video_url && (
+            <div className="mt-2">
+              <video 
+                controls 
+                className="max-w-xs max-h-48 rounded-lg"
+                preload="metadata"
+              >
+                <source src={comment.video_url} />
+                您的浏览器不支持视频播放
+              </video>
             </div>
           )}
           
@@ -202,6 +243,19 @@ const CommentItem = memo(({
                   </button>
                 </div>
               )}
+
+              {replyVideo && (
+                <div className="relative inline-block">
+                  <video src={replyVideo} className="max-w-xs max-h-32 rounded-lg" controls />
+                  <button
+                    type="button"
+                    onClick={() => onReplyVideoChange(null)}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
               
               <div className="flex gap-2 items-center">
                 <Button
@@ -229,11 +283,28 @@ const CommentItem = memo(({
                   <ImageIcon className="w-3 h-3" />
                   图片
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => replyVideoInputRef.current?.click()}
+                  className="gap-1"
+                >
+                  <Video className="w-3 h-3" />
+                  视频
+                </Button>
                 <input
                   ref={replyImageInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleReplyImageSelect}
+                  className="hidden"
+                />
+                <input
+                  ref={replyVideoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleReplyVideoSelect}
                   className="hidden"
                 />
               </div>
@@ -242,7 +313,7 @@ const CommentItem = memo(({
         </div>
       </div>
       
-      {comment.replies && comment.replies.length > 0 && (
+          {comment.replies && comment.replies.length > 0 && (
         <div className="space-y-1">
           {comment.replies.map(reply => (
             <CommentItem 
@@ -255,14 +326,17 @@ const CommentItem = memo(({
               replyToId={replyToId}
               replyContent={replyContent}
               replyImage={replyImage}
+              replyVideo={replyVideo}
               isSubmitting={isSubmitting}
               onReplyClick={onReplyClick}
               onReplyContentChange={onReplyContentChange}
               onReplyImageChange={onReplyImageChange}
+              onReplyVideoChange={onReplyVideoChange}
               onSubmitReply={onSubmitReply}
               onCancelReply={onCancelReply}
               onDelete={onDelete}
               onImageUpload={onImageUpload}
+              onVideoUpload={onVideoUpload}
             />
           ))}
         </div>
@@ -279,12 +353,15 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [newComment, setNewComment] = useState('');
   const [newCommentImage, setNewCommentImage] = useState<string | null>(null);
+  const [newCommentVideo, setNewCommentVideo] = useState<string | null>(null);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [replyImage, setReplyImage] = useState<string | null>(null);
+  const [replyVideo, setReplyVideo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchComments();
@@ -363,6 +440,31 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
     }
   };
 
+  const uploadVideo = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/comments/videos/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('articles')
+        .upload(fileName, file, { contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('articles')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Video upload error:', error);
+      toast.error('视频上传失败');
+      return null;
+    }
+  };
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -406,12 +508,14 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
           user_id: user.id,
           content: newComment.trim(),
           image_url: newCommentImage,
+          video_url: newCommentVideo,
         });
 
       if (error) throw error;
 
       setNewComment('');
       setNewCommentImage(null);
+      setNewCommentVideo(null);
       toast.success('评论发布成功');
       fetchComments();
     } catch (error: any) {
@@ -445,12 +549,14 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
           parent_id: parentId,
           content: replyContent.trim(),
           image_url: replyImage,
+          video_url: replyVideo,
         });
 
       if (error) throw error;
 
       setReplyContent('');
       setReplyImage(null);
+      setReplyVideo(null);
       setReplyToId(null);
       toast.success('回复成功');
       fetchComments();
@@ -460,7 +566,7 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [articleId, replyContent, replyImage, user]);
+  }, [articleId, replyContent, replyImage, replyVideo, user]);
 
   const handleDeleteComment = useCallback(async (commentId: string) => {
     try {
@@ -482,6 +588,7 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
     setReplyToId(id);
     setReplyContent('');
     setReplyImage(null);
+    setReplyVideo(null);
   }, []);
 
   const handleReplyContentChange = useCallback((value: string) => {
@@ -492,11 +599,36 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
     setReplyImage(url);
   }, []);
 
+  const handleReplyVideoChange = useCallback((url: string | null) => {
+    setReplyVideo(url);
+  }, []);
+
   const handleCancelReply = useCallback(() => {
     setReplyToId(null);
     setReplyContent('');
     setReplyImage(null);
+    setReplyVideo(null);
   }, []);
+
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error('请选择视频文件');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('视频大小不能超过50MB');
+      return;
+    }
+
+    const url = await uploadVideo(file);
+    if (url) {
+      setNewCommentVideo(url);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -526,8 +658,21 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
               </button>
             </div>
           )}
+
+          {newCommentVideo && (
+            <div className="relative inline-block">
+              <video src={newCommentVideo} className="max-w-xs max-h-32 rounded-lg" controls />
+              <button
+                type="button"
+                onClick={() => setNewCommentVideo(null)}
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button type="submit" disabled={isSubmitting || !newComment.trim()}>
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               发布评论
@@ -541,11 +686,27 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
               <ImageIcon className="w-4 h-4" />
               添加图片
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => videoInputRef.current?.click()}
+              className="gap-1"
+            >
+              <Video className="w-4 h-4" />
+              添加视频
+            </Button>
             <input
               ref={imageInputRef}
               type="file"
               accept="image/*"
               onChange={handleImageSelect}
+              className="hidden"
+            />
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoSelect}
               className="hidden"
             />
           </div>
@@ -574,14 +735,17 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
               replyToId={replyToId}
               replyContent={replyContent}
               replyImage={replyImage}
+              replyVideo={replyVideo}
               isSubmitting={isSubmitting}
               onReplyClick={handleReplyClick}
               onReplyContentChange={handleReplyContentChange}
               onReplyImageChange={handleReplyImageChange}
+              onReplyVideoChange={handleReplyVideoChange}
               onSubmitReply={handleSubmitReply}
               onCancelReply={handleCancelReply}
               onDelete={handleDeleteComment}
               onImageUpload={uploadImage}
+              onVideoUpload={uploadVideo}
             />
           ))}
         </div>

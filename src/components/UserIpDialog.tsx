@@ -46,10 +46,8 @@ export function UserIpDialog({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  const cursor = useMemo(() => rows[rows.length - 1]?.created_at ?? null, [rows]);
-
   const fetchPage = useCallback(
-    async (mode: "initial" | "more") => {
+    async (mode: "initial" | "more", cursorValue: string | null = null) => {
       if (mode === "initial") {
         setIsLoading(true);
       } else {
@@ -64,8 +62,8 @@ export function UserIpDialog({
           .order("created_at", { ascending: false })
           .limit(PAGE_SIZE);
 
-        if (mode === "more" && cursor) {
-          q = q.lt("created_at", cursor);
+        if (mode === "more" && cursorValue) {
+          q = q.lt("created_at", cursorValue);
         }
 
         const { data, error } = await q;
@@ -80,15 +78,23 @@ export function UserIpDialog({
         setIsLoadingMore(false);
       }
     },
-    [cursor, userId]
+    [userId]
   );
+
+  const handleLoadMore = useCallback(() => {
+    const lastRow = rows[rows.length - 1];
+    if (lastRow) {
+      fetchPage("more", lastRow.created_at);
+    }
+  }, [rows, fetchPage]);
 
   useEffect(() => {
     if (!open) return;
     setRows([]);
     setHasMore(true);
     fetchPage("initial");
-  }, [open, fetchPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, userId]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -138,7 +144,7 @@ export function UserIpDialog({
                 variant="outline"
                 size="sm"
                 disabled={!hasMore || isLoadingMore}
-                onClick={() => fetchPage("more")}
+                onClick={handleLoadMore}
               >
                 {isLoadingMore ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
