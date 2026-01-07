@@ -294,10 +294,11 @@ export default function ArticlePage() {
             <div 
             className="prose prose-lg max-w-none [&_img]:cursor-zoom-in [&_video]:max-w-full [&_video]:rounded-lg"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content, {
-              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'video', 'source', 'div', 'iframe'],
+              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'video', 'source', 'div', 'iframe', 'span'],
               ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel', 'controls', 'type', 'style', 'width', 'height', 'allowfullscreen', 'frameborder', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload'],
               ADD_TAGS: ['video', 'source'],
-              ADD_ATTR: ['controls', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload'],
+              ADD_ATTR: ['controls', 'src', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload', 'style'],
+              ALLOW_DATA_ATTR: false,
             }) }}
             />
 

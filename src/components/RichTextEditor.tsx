@@ -133,13 +133,10 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         .from('articles')
         .getPublicUrl(fileName);
 
-      // Insert video as HTML (native video element)
-      editor.chain().focus().insertContent(`
-        <p><video controls style="max-width: 100%; border-radius: 8px;">
-          <source src="${publicUrl}" type="${file.type}">
-          您的浏览器不支持视频播放
-        </video></p>
-      `).run();
+      // Insert video as HTML (native video element with src directly on video tag)
+      editor.chain().focus().insertContent(
+        `<p><video controls src="${publicUrl}" style="max-width: 100%; border-radius: 8px;"></video></p>`
+      ).run();
       
       toast.success('视频上传成功');
     } catch (error) {
