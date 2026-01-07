@@ -62,6 +62,7 @@ export type Database = {
           parent_id: string | null
           updated_at: string
           user_id: string
+          video_url: string | null
         }
         Insert: {
           article_id: string
@@ -72,6 +73,7 @@ export type Database = {
           parent_id?: string | null
           updated_at?: string
           user_id: string
+          video_url?: string | null
         }
         Update: {
           article_id?: string
@@ -82,6 +84,7 @@ export type Database = {
           parent_id?: string | null
           updated_at?: string
           user_id?: string
+          video_url?: string | null
         }
         Relationships: [
           {

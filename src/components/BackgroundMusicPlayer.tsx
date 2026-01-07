@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Loader2 } from 'lucide-react';
 
 interface BackgroundMusicPlayerProps {
   musicUrl: string | null;
@@ -10,19 +10,45 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!musicUrl) return;
 
-    const audio = new Audio(musicUrl);
+    setIsLoading(true);
+    setIsReady(false);
+    setIsPlaying(false);
+
+    const audio = new Audio();
+    audioRef.current = audio;
+    
+    audio.addEventListener('canplaythrough', () => {
+      setIsLoading(false);
+      setIsReady(true);
+    });
+
+    audio.addEventListener('error', (e) => {
+      console.error('Audio load error:', e);
+      setIsLoading(false);
+      setIsReady(false);
+    });
+
+    audio.addEventListener('ended', () => {
+      // Loop manually if needed
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    });
+
     audio.loop = true;
     audio.volume = 0.3;
-    audioRef.current = audio;
+    audio.preload = 'auto';
+    audio.src = musicUrl;
+    audio.load();
 
-    // Auto-play when component mounts
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise
+    // Try auto-play
+    const tryAutoPlay = () => {
+      audio.play()
         .then(() => {
           setIsPlaying(true);
         })
@@ -30,12 +56,16 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
           console.log('Auto-play prevented:', error);
           setIsPlaying(false);
         });
-    }
+    };
+
+    // Wait for ready then try auto-play
+    audio.addEventListener('canplaythrough', tryAutoPlay, { once: true });
 
     // Cleanup: stop music when leaving the page
     return () => {
       audio.pause();
       audio.src = '';
+      audio.removeEventListener('canplaythrough', tryAutoPlay);
       audioRef.current = null;
     };
   }, [musicUrl]);
@@ -45,9 +75,6 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
 
     if (isMuted) {
       audioRef.current.volume = 0.3;
-      if (!isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-      }
     } else {
       audioRef.current.volume = 0;
     }
@@ -56,10 +83,19 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
 
   const handlePlay = () => {
     if (!audioRef.current) return;
-    audioRef.current.play().then(() => {
-      setIsPlaying(true);
-      setIsMuted(false);
-    }).catch(() => {});
+    
+    setIsLoading(true);
+    
+    audioRef.current.play()
+      .then(() => {
+        setIsPlaying(true);
+        setIsMuted(false);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error('Play error:', err);
+        setIsLoading(false);
+      });
   };
 
   if (!musicUrl) return null;
@@ -71,10 +107,15 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
           variant="secondary"
           size="sm"
           onClick={handlePlay}
+          disabled={isLoading}
           className="gap-2 shadow-lg"
         >
-          <Volume2 className="w-4 h-4" />
-          播放背景音乐
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Volume2 className="w-4 h-4" />
+          )}
+          {isLoading ? '加载中...' : '播放背景音乐'}
         </Button>
       ) : (
         <Button
