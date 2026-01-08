@@ -97,7 +97,7 @@ export function AudioUploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept="audio/*"
+        accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.webm,.3gp,.amr,.aiff"
         onChange={handleFileSelect}
         className="hidden"
       />
