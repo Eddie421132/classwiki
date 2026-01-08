@@ -21,10 +21,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Upload, Loader2, User, Save, Trash2 } from 'lucide-react';
+import { ThemeSelector } from '@/components/ThemeSelector';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile, isLoading: authLoading, refreshProfile, signOut } = useAuth();
+  const { theme, changeTheme } = useTheme();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [realName, setRealName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -241,6 +244,11 @@ export default function SettingsPage() {
                 )}
                 保存修改
               </Button>
+
+              {/* Theme Section */}
+              <div className="pt-6 border-t border-border">
+                <ThemeSelector theme={theme} onThemeChange={changeTheme} />
+              </div>
 
               {/* Delete Account Section */}
               <div className="pt-6 border-t border-border">

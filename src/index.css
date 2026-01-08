@@ -111,6 +111,152 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  /* ========== Glassmorphism Theme (Apple Style) ========== */
+  .theme-glassmorphism {
+    --background: 220 20% 97%;
+    --foreground: 220 25% 15%;
+    --card: 0 0% 100% / 0.7;
+    --card-foreground: 220 25% 15%;
+    --popover: 0 0% 100% / 0.85;
+    --popover-foreground: 220 25% 15%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 280 60% 65%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 15% 92% / 0.6;
+    --muted-foreground: 220 15% 40%;
+    --accent: 200 90% 55%;
+    --accent-foreground: 0 0% 100%;
+    --border: 0 0% 100% / 0.3;
+    --input: 0 0% 100% / 0.5;
+    --ring: 210 100% 50%;
+  }
+
+  .theme-glassmorphism.dark {
+    --background: 230 25% 8%;
+    --foreground: 210 30% 95%;
+    --card: 230 20% 15% / 0.6;
+    --card-foreground: 210 30% 95%;
+    --popover: 230 20% 12% / 0.85;
+    --popover-foreground: 210 30% 95%;
+    --primary: 210 100% 60%;
+    --muted: 230 15% 20% / 0.5;
+    --muted-foreground: 215 15% 65%;
+    --border: 0 0% 100% / 0.1;
+    --input: 0 0% 100% / 0.1;
+  }
+
+  /* ========== Aurora Theme ========== */
+  .theme-aurora {
+    --background: 270 30% 98%;
+    --foreground: 260 25% 15%;
+    --card: 280 40% 99%;
+    --card-foreground: 260 25% 15%;
+    --popover: 280 40% 99%;
+    --popover-foreground: 260 25% 15%;
+    --primary: 280 80% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 190 90% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 270 20% 94%;
+    --muted-foreground: 270 15% 45%;
+    --accent: 320 80% 55%;
+    --accent-foreground: 0 0% 100%;
+    --border: 270 20% 88%;
+    --input: 270 20% 88%;
+    --ring: 280 80% 60%;
+    --gradient-hero: linear-gradient(135deg, hsl(280 80% 60%) 0%, hsl(190 90% 50%) 50%, hsl(320 80% 55%) 100%);
+  }
+
+  .theme-aurora.dark {
+    --background: 270 30% 8%;
+    --foreground: 270 20% 95%;
+    --card: 270 25% 12%;
+    --card-foreground: 270 20% 95%;
+    --popover: 270 25% 12%;
+    --popover-foreground: 270 20% 95%;
+    --primary: 280 80% 65%;
+    --muted: 270 20% 18%;
+    --muted-foreground: 270 15% 60%;
+    --border: 270 20% 22%;
+    --input: 270 20% 22%;
+  }
+
+  /* ========== Minimal Theme ========== */
+  .theme-minimal {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 8%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 8%;
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 15%) 0%, hsl(0 0% 35%) 100%);
+  }
+
+  .theme-minimal.dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+  }
+
+  /* ========== Warm Theme ========== */
+  .theme-warm {
+    --background: 35 40% 97%;
+    --foreground: 25 30% 15%;
+    --card: 35 50% 99%;
+    --card-foreground: 25 30% 15%;
+    --popover: 35 50% 99%;
+    --popover-foreground: 25 30% 15%;
+    --primary: 25 90% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 85% 55%;
+    --secondary-foreground: 25 30% 15%;
+    --muted: 35 30% 93%;
+    --muted-foreground: 25 20% 45%;
+    --accent: 15 80% 50%;
+    --accent-foreground: 0 0% 100%;
+    --border: 35 25% 88%;
+    --input: 35 25% 88%;
+    --ring: 25 90% 55%;
+    --gradient-hero: linear-gradient(135deg, hsl(25 90% 55%) 0%, hsl(45 85% 55%) 100%);
+  }
+
+  .theme-warm.dark {
+    --background: 25 25% 8%;
+    --foreground: 35 30% 95%;
+    --card: 25 25% 12%;
+    --card-foreground: 35 30% 95%;
+    --popover: 25 25% 12%;
+    --popover-foreground: 35 30% 95%;
+    --primary: 25 85% 60%;
+    --muted: 25 20% 18%;
+    --muted-foreground: 35 15% 60%;
+    --border: 25 20% 22%;
+    --input: 25 20% 22%;
+  }
 }
 
 @layer base {
@@ -151,6 +297,66 @@
   .wiki-card:hover {
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
+  }
+
+  /* Glassmorphism card style */
+  .theme-glassmorphism .wiki-card {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: hsl(var(--card));
+    border: 1px solid hsl(0 0% 100% / 0.2);
+    box-shadow: 0 8px 32px 0 hsl(220 25% 15% / 0.1);
+  }
+
+  .theme-glassmorphism .wiki-card:hover {
+    box-shadow: 0 12px 40px 0 hsl(220 25% 15% / 0.15);
+    border-color: hsl(0 0% 100% / 0.3);
+  }
+
+  .theme-glassmorphism.dark .wiki-card {
+    border: 1px solid hsl(0 0% 100% / 0.08);
+    box-shadow: 0 8px 32px 0 hsl(0 0% 0% / 0.3);
+  }
+
+  /* Aurora animated background */
+  .theme-aurora body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(ellipse at 20% 20%, hsl(280 80% 60% / 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, hsl(190 90% 50% / 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, hsl(320 80% 55% / 0.1) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: -1;
+    animation: aurora-shift 20s ease-in-out infinite;
+  }
+
+  @keyframes aurora-shift {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Minimal clean shadows */
+  .theme-minimal .wiki-card {
+    box-shadow: 0 1px 3px hsl(0 0% 0% / 0.08);
+    border-radius: 8px;
+  }
+
+  .theme-minimal .wiki-card:hover {
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.1);
+  }
+
+  /* Warm glow effect */
+  .theme-warm .wiki-card {
+    box-shadow: 0 4px 20px hsl(25 90% 55% / 0.1);
+  }
+
+  .theme-warm .wiki-card:hover {
+    box-shadow: 0 8px 30px hsl(25 90% 55% / 0.15);
   }
 
   .search-container {
