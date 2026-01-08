@@ -3,9 +3,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Youtube from '@tiptap/extension-youtube';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Video as VideoExtension } from '@/components/extensions/VideoExtension';
 import { 
   Bold, Italic, Strikethrough, Code, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Undo, Redo, ImageIcon, Video, Loader2
+  List, ListOrdered, Quote, Undo, Redo, ImageIcon, Video as VideoIcon, Loader2
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +43,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       Placeholder.configure({
         placeholder: '开始编写你的文章...',
       }),
+      VideoExtension,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -133,10 +135,8 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         .from('articles')
         .getPublicUrl(fileName);
 
-      // Insert video as HTML (native video element with src directly on video tag)
-      editor.chain().focus().insertContent(
-        `<p><video controls src="${publicUrl}" style="max-width: 100%; border-radius: 8px;"></video></p>`
-      ).run();
+      // Insert video using the video extension
+      editor.chain().focus().setVideo({ src: publicUrl }).run();
       
       toast.success('视频上传成功');
     } catch (error) {
@@ -257,7 +257,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           {isUploadingVideo ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <Video className="w-4 h-4" />
+            <VideoIcon className="w-4 h-4" />
           )}
         </ToolbarButton>
         
