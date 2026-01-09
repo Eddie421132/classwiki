@@ -56,7 +56,7 @@ export function ThemeSelector({ theme, onThemeChange }: ThemeSelectorProps) {
 function getThemePreviewClass(theme: ThemeStyle): string {
   switch (theme) {
     case 'glassmorphism':
-      return 'bg-gradient-to-br from-white/60 to-white/20 backdrop-blur border border-white/30';
+      return 'bg-gradient-to-br from-blue-200/80 via-purple-200/60 to-cyan-200/80 backdrop-blur-xl border border-white/50 shadow-lg';
     case 'aurora':
       return 'bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500';
     case 'minimal':
@@ -71,7 +71,7 @@ function getThemePreviewClass(theme: ThemeStyle): string {
 function getThemeIcon(theme: ThemeStyle): React.ReactNode {
   switch (theme) {
     case 'glassmorphism':
-      return <span className="text-lg">🍎</span>;
+      return <span className="text-lg">💧</span>;
     case 'aurora':
       return <span className="text-lg">🌌</span>;
     case 'minimal':

@@ -35,7 +35,7 @@ export function useTheme() {
 
 export const themeOptions: { value: ThemeStyle; label: string; description: string }[] = [
   { value: 'default', label: '经典', description: '简洁优雅的默认主题' },
-  { value: 'glassmorphism', label: '毛玻璃', description: '苹果风格透明磨砂效果' },
+  { value: 'glassmorphism', label: '液态玻璃', description: 'iPhone风格流动透明效果' },
   { value: 'aurora', label: '极光', description: '梦幻渐变色彩流动' },
   { value: 'minimal', label: '极简', description: '纯净黑白极简风格' },
   { value: 'warm', label: '暖阳', description: '温暖舒适的暖色调' },
