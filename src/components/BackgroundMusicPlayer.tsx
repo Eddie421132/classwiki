@@ -27,12 +27,51 @@ const SUPPORTED_AUDIO_TYPES = [
   'audio/aiff',      // aiff
 ];
 
+const EXT_TO_MIME: Record<string, string> = {
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+  webm: 'audio/webm',
+  aac: 'audio/aac',
+  m4a: 'audio/mp4',
+  mp4: 'audio/mp4',
+  flac: 'audio/flac',
+  amr: 'audio/amr',
+  '3gp': 'audio/3gpp',
+  aiff: 'audio/aiff',
+  aif: 'audio/aiff',
+};
+
+const getAudioExtFromUrl = (url: string) => {
+  try {
+    const pathname = new URL(url).pathname;
+    const ext = pathname.split('.').pop()?.toLowerCase();
+    return ext || null;
+  } catch {
+    const clean = url.split('?')[0];
+    const ext = clean.split('.').pop()?.toLowerCase();
+    return ext || null;
+  }
+};
+
+const canBrowserProbablyPlayAudioUrl = (url: string) => {
+  const ext = getAudioExtFromUrl(url);
+  if (!ext) return true;
+
+  const mime = EXT_TO_MIME[ext];
+  if (!mime) return true;
+
+  const el = document.createElement('audio');
+  return el.canPlayType(mime) !== '';
+};
+
 export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
 
   const initAudio = useCallback(() => {
@@ -43,21 +82,29 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     audio.preload = 'auto';
     audio.loop = true;
     audio.volume = 0.3;
-    
+    audio.autoplay = true;
+
+    // iOS/Safari friendliness
+    try {
+      audio.setAttribute('playsinline', '');
+    } catch {
+      // ignore
+    }
+
     return audio;
   }, [musicUrl]);
 
-  // Auto-play when audio is ready
+  // Auto-play when audio is ready (may be blocked by browser policy)
   const tryAutoPlay = useCallback(async () => {
     if (!audioRef.current || hasAutoPlayed) return;
-    
+
     try {
       await audioRef.current.play();
       setIsPlaying(true);
       setHasAutoPlayed(true);
-    } catch (err) {
-      console.log('Auto-play blocked, waiting for user interaction');
-      // Auto-play was blocked, user needs to click
+    } catch (err: any) {
+      console.log('Auto-play blocked:', err?.name);
+      // Not an error state: user can still click play.
       setIsPlaying(false);
     }
   }, [hasAutoPlayed]);
@@ -67,29 +114,47 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
       setIsPlaying(false);
       setIsLoading(false);
       setHasError(false);
+      setErrorMessage(null);
       return;
     }
 
     setIsLoading(true);
     setHasError(false);
+    setErrorMessage(null);
     setIsPlaying(false);
     setHasAutoPlayed(false);
+
+    if (!canBrowserProbablyPlayAudioUrl(musicUrl)) {
+      setIsLoading(false);
+      setHasError(true);
+      setErrorMessage('当前浏览器不支持该音频格式，请上传 mp3/m4a/wav');
+      return;
+    }
 
     const audio = initAudio();
     if (!audio) return;
 
     audioRef.current = audio;
 
-    const handleCanPlay = () => {
-      console.log('Audio can play');
+    const handleReady = () => {
       setIsLoading(false);
-      tryAutoPlay();
+      void tryAutoPlay();
+    };
+
+    const handlePlaying = () => {
+      setIsLoading(false);
+      setIsPlaying(true);
+    };
+
+    const handlePauseEvent = () => {
+      setIsPlaying(false);
     };
 
     const handleError = (e: Event) => {
-      console.error('Audio error:', e, audio.error);
+      console.error('Audio error:', e, audio.error, { src: musicUrl });
       setIsLoading(false);
       setHasError(true);
+      setErrorMessage('音频加载失败，请重试或更换音频格式');
     };
 
     const handleEnded = () => {
@@ -97,8 +162,11 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
       audio.play().catch(console.error);
     };
 
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('canplaythrough', handleCanPlay);
+    audio.addEventListener('loadeddata', handleReady);
+    audio.addEventListener('canplay', handleReady);
+    audio.addEventListener('canplaythrough', handleReady);
+    audio.addEventListener('playing', handlePlaying);
+    audio.addEventListener('pause', handlePauseEvent);
     audio.addEventListener('error', handleError);
     audio.addEventListener('ended', handleEnded);
 
@@ -107,8 +175,11 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
 
     return () => {
       audio.pause();
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('canplaythrough', handleCanPlay);
+      audio.removeEventListener('loadeddata', handleReady);
+      audio.removeEventListener('canplay', handleReady);
+      audio.removeEventListener('canplaythrough', handleReady);
+      audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('pause', handlePauseEvent);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('ended', handleEnded);
       audio.src = '';
@@ -117,23 +188,26 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
   }, [musicUrl, initAudio, tryAutoPlay]);
 
   const handlePlay = async () => {
-    if (!audioRef.current) return;
-    
-    setIsLoading(true);
-    
-    try {
-      if (hasError && musicUrl) {
-        audioRef.current.src = musicUrl;
-        audioRef.current.load();
-        setHasError(false);
-      }
+    if (!audioRef.current || !musicUrl) return;
 
+    if (!canBrowserProbablyPlayAudioUrl(musicUrl)) {
+      setHasError(true);
+      setErrorMessage('当前浏览器不支持该音频格式，请上传 mp3/m4a/wav');
+      return;
+    }
+
+    setHasError(false);
+    setErrorMessage(null);
+    setIsLoading(true);
+
+    try {
       await audioRef.current.play();
       setIsPlaying(true);
       setIsMuted(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Play error:', err);
       setHasError(true);
+      setErrorMessage(err?.name === 'NotAllowedError' ? '浏览器阻止播放，请再点一次' : '播放失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -158,6 +232,14 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
 
   if (!musicUrl) return null;
 
+  const buttonText = isLoading
+    ? '加载中...'
+    : hasError
+      ? errorMessage?.includes('不支持')
+        ? '不支持格式'
+        : '重试'
+      : '播放';
+
   return (
     <div className="fixed top-20 right-4 z-50">
       {!isPlaying ? (
@@ -165,15 +247,15 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
           variant="secondary"
           size="sm"
           onClick={handlePlay}
-          disabled={isLoading}
           className="gap-2 shadow-lg backdrop-blur-sm bg-background/80"
+          title={errorMessage || undefined}
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Play className="w-4 h-4" />
           )}
-          {isLoading ? '加载中...' : hasError ? '重试' : '播放'}
+          {buttonText}
         </Button>
       ) : (
         <div className="flex gap-2">
@@ -184,11 +266,7 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
             className="shadow-lg backdrop-blur-sm bg-background/80"
             title={isMuted ? '取消静音' : '静音'}
           >
-            {isMuted ? (
-              <VolumeX className="w-4 h-4" />
-            ) : (
-              <Volume2 className="w-4 h-4" />
-            )}
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </Button>
           <Button
             variant="secondary"
@@ -204,3 +282,4 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     </div>
   );
 }
+
