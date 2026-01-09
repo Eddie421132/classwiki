@@ -13,6 +13,36 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '1.8.0',
+    date: '2026-01-09',
+    type: 'improvement',
+    changes: [
+      '背景音乐进入文章后自动播放',
+      '播放器按钮移至右上角',
+      '新增暂停按钮',
+    ],
+  },
+  {
+    version: '1.7.0',
+    date: '2026-01-08',
+    type: 'feature',
+    changes: [
+      '新增主题切换功能',
+      '支持iPhone液态玻璃风格',
+      '支持极光、极简、暖色等多种主题',
+    ],
+  },
+  {
+    version: '1.6.0',
+    date: '2026-01-07',
+    type: 'feature',
+    changes: [
+      '文章支持背景音乐上传',
+      '支持多种音频格式（mp3, wav, m4a, amr等）',
+      '编辑器新增音频上传按钮',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2025-01-27',
     type: 'feature',

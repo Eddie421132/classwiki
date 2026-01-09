@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX, Loader2, Play } from 'lucide-react';
+import { Volume2, VolumeX, Loader2, Play, Pause } from 'lucide-react';
 
 interface BackgroundMusicPlayerProps {
   musicUrl: string | null;
@@ -31,9 +31,9 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [userInteracted, setUserInteracted] = useState(false);
+  const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
 
   const initAudio = useCallback(() => {
     if (!musicUrl) return null;
@@ -47,6 +47,21 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     return audio;
   }, [musicUrl]);
 
+  // Auto-play when audio is ready
+  const tryAutoPlay = useCallback(async () => {
+    if (!audioRef.current || hasAutoPlayed) return;
+    
+    try {
+      await audioRef.current.play();
+      setIsPlaying(true);
+      setHasAutoPlayed(true);
+    } catch (err) {
+      console.log('Auto-play blocked, waiting for user interaction');
+      // Auto-play was blocked, user needs to click
+      setIsPlaying(false);
+    }
+  }, [hasAutoPlayed]);
+
   useEffect(() => {
     if (!musicUrl) {
       setIsPlaying(false);
@@ -58,6 +73,7 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     setIsLoading(true);
     setHasError(false);
     setIsPlaying(false);
+    setHasAutoPlayed(false);
 
     const audio = initAudio();
     if (!audio) return;
@@ -67,6 +83,7 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     const handleCanPlay = () => {
       console.log('Audio can play');
       setIsLoading(false);
+      tryAutoPlay();
     };
 
     const handleError = (e: Event) => {
@@ -76,7 +93,6 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     };
 
     const handleEnded = () => {
-      // Loop manually as fallback
       audio.currentTime = 0;
       audio.play().catch(console.error);
     };
@@ -86,7 +102,6 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     audio.addEventListener('error', handleError);
     audio.addEventListener('ended', handleEnded);
 
-    // Set source and load
     audio.src = musicUrl;
     audio.load();
 
@@ -99,16 +114,14 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
       audio.src = '';
       audioRef.current = null;
     };
-  }, [musicUrl, initAudio]);
+  }, [musicUrl, initAudio, tryAutoPlay]);
 
   const handlePlay = async () => {
     if (!audioRef.current) return;
     
-    setUserInteracted(true);
     setIsLoading(true);
     
     try {
-      // Reset audio if it had an error
       if (hasError && musicUrl) {
         audioRef.current.src = musicUrl;
         audioRef.current.load();
@@ -126,6 +139,12 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     }
   };
 
+  const handlePause = () => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    setIsPlaying(false);
+  };
+
   const toggleMute = () => {
     if (!audioRef.current) return;
 
@@ -137,32 +156,24 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
     setIsMuted(!isMuted);
   };
 
-  const handlePause = () => {
-    if (!audioRef.current) return;
-    audioRef.current.pause();
-    setIsPlaying(false);
-  };
-
   if (!musicUrl) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed top-20 right-4 z-50">
       {!isPlaying ? (
         <Button
           variant="secondary"
           size="sm"
           onClick={handlePlay}
           disabled={isLoading}
-          className="gap-2 shadow-lg"
+          className="gap-2 shadow-lg backdrop-blur-sm bg-background/80"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
-          ) : hasError ? (
-            <Play className="w-4 h-4" />
           ) : (
             <Play className="w-4 h-4" />
           )}
-          {isLoading ? '加载中...' : hasError ? '重试播放' : '播放背景音乐'}
+          {isLoading ? '加载中...' : hasError ? '重试' : '播放'}
         </Button>
       ) : (
         <div className="flex gap-2">
@@ -170,13 +181,23 @@ export function BackgroundMusicPlayer({ musicUrl }: BackgroundMusicPlayerProps) 
             variant="secondary"
             size="icon"
             onClick={toggleMute}
-            className="shadow-lg"
+            className="shadow-lg backdrop-blur-sm bg-background/80"
+            title={isMuted ? '取消静音' : '静音'}
           >
             {isMuted ? (
               <VolumeX className="w-4 h-4" />
             ) : (
               <Volume2 className="w-4 h-4" />
             )}
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={handlePause}
+            className="shadow-lg backdrop-blur-sm bg-background/80"
+            title="暂停"
+          >
+            <Pause className="w-4 h-4" />
           </Button>
         </div>
       )}
