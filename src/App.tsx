@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { GlassBackground } from "@/components/GlassBackground";
 import { IpBanCheck } from "@/components/IpBanCheck";
 import { OnlineStatusProvider } from "@/components/OnlineStatusProvider";
+import { AutoLoginProvider } from "@/components/AutoLoginProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UserAuth from "./pages/UserAuth";
@@ -30,9 +31,10 @@ const App = () => (
       <Toaster />
       <Sonner />
       <GlassBackground />
-      <IpBanCheck>
-        <BrowserRouter>
-          <AuthProvider>
+        <IpBanCheck>
+          <AutoLoginProvider>
+            <BrowserRouter>
+              <AuthProvider>
             <OnlineStatusProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -51,9 +53,10 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </OnlineStatusProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </IpBanCheck>
+              </AuthProvider>
+            </BrowserRouter>
+          </AutoLoginProvider>
+        </IpBanCheck>
     </TooltipProvider>
   </QueryClientProvider>
 );

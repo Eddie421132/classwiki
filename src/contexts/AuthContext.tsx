@@ -68,6 +68,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const bindIpOnLogin = async () => {
+    try {
+      await supabase.functions.invoke('bind-ip');
+    } catch (e) {
+      console.warn('Failed to bind IP:', e);
+    }
+  };
+
+  const unbindIpOnLogout = async () => {
+    try {
+      await supabase.functions.invoke('unbind-ip');
+    } catch (e) {
+      console.warn('Failed to unbind IP:', e);
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
@@ -80,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (event === 'SIGNED_IN') {
           void logUserIpOnLogin();
+          void bindIpOnLogin();
         }
       } else {
         setProfile(null);
@@ -109,6 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Unbind IP before signing out
+    await unbindIpOnLogout();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

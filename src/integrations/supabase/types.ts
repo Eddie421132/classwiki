@@ -253,6 +253,38 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_article_views: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          user_id: string
+          viewed_date: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+          viewed_date?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          viewed_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_article_views_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_verification_codes: {
         Row: {
           code: string
@@ -277,6 +309,27 @@ export type Database = {
           expires_at?: string
           id?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      ip_user_bindings: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          user_id?: string
         }
         Relationships: []
       }
