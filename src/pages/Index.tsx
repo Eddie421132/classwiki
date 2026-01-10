@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchBox } from '@/components/SearchBox';
 import { ArticleCard } from '@/components/ArticleCard';
+import { DailyLimitBanner } from '@/components/DailyLimitBanner';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, BookOpen, Users, FileText } from 'lucide-react';
@@ -146,6 +147,7 @@ const Index = () => {
       {/* Recent Articles */}
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
+          <DailyLimitBanner />
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <BookOpen className="w-6 h-6 text-primary" />
