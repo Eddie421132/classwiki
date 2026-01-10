@@ -229,6 +229,30 @@ export type Database = {
           },
         ]
       }
+      banned_ips: {
+        Row: {
+          banned_by: string
+          created_at: string
+          id: string
+          ip: string
+          reason: string | null
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          id?: string
+          ip: string
+          reason?: string | null
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          id?: string
+          ip?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       email_verification_codes: {
         Row: {
           code: string
@@ -253,6 +277,27 @@ export type Database = {
           expires_at?: string
           id?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      online_users: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen?: string
+          user_id?: string
         }
         Relationships: []
       }

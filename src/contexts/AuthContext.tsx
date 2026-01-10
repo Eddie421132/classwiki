@@ -9,6 +9,7 @@ interface Profile {
   real_name: string;
   avatar_url: string | null;
   status: string;
+  bio: string;
 }
 
 interface AuthContextType {

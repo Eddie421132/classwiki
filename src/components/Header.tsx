@@ -10,10 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { OnlineIndicator } from '@/components/OnlineIndicator';
+import { useOnlineUsers } from '@/hooks/useOnlineUsers';
 
 export function Header() {
   const { user, profile, isAdmin, isSecondAdmin, isApprovedEditor, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
+  const onlineUserIds = useOnlineUsers();
+  const isCurrentUserOnline = user?.id ? onlineUserIds.has(user.id) : false;
 
   const handleSignOut = async () => {
     await signOut();
@@ -77,6 +81,11 @@ export function Header() {
                         {profile?.real_name?.charAt(0) || <User className="w-4 h-4" />}
                       </AvatarFallback>
                     </Avatar>
+                    <OnlineIndicator 
+                      isOnline={isCurrentUserOnline} 
+                      size="sm" 
+                      className="bottom-0 right-0"
+                    />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
