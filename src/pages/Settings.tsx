@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Upload, Loader2, User, Save, Trash2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -30,6 +31,7 @@ export default function SettingsPage() {
   const { theme, changeTheme } = useTheme();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [realName, setRealName] = useState('');
+  const [bio, setBio] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -45,6 +47,7 @@ export default function SettingsPage() {
     if (profile) {
       setAvatarUrl(profile.avatar_url);
       setRealName(profile.real_name);
+      setBio((profile as any).bio || '');
     }
   }, [profile]);
 
@@ -110,7 +113,10 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ real_name: realName.trim() })
+        .update({ 
+          real_name: realName.trim(),
+          bio: bio.trim()
+        })
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -213,6 +219,21 @@ export default function SettingsPage() {
                   value={realName}
                   onChange={(e) => setRealName(e.target.value)}
                 />
+              </div>
+
+              {/* Bio Section */}
+              <div className="space-y-2">
+                <Label htmlFor="bio">个人简介</Label>
+                <Textarea
+                  id="bio"
+                  placeholder="介绍一下自己吧..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  maxLength={200}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground text-right">{bio.length}/200</p>
               </div>
 
               {/* Status Display */}

@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlassBackground } from "@/components/GlassBackground";
+import { IpBanCheck } from "@/components/IpBanCheck";
+import { OnlineStatusProvider } from "@/components/OnlineStatusProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UserAuth from "./pages/UserAuth";
@@ -28,26 +30,30 @@ const App = () => (
       <Toaster />
       <Sonner />
       <GlassBackground />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/user-auth" element={<UserAuth />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/editor" element={<Editor />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/article/:id" element={<Article />} />
-            <Route path="/articles" element={<Articles />} />
-            <Route path="/profile/:userId" element={<EditorProfile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/drafts" element={<Drafts />} />
-            <Route path="/changelog" element={<Changelog />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+      <IpBanCheck>
+        <BrowserRouter>
+          <AuthProvider>
+            <OnlineStatusProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/user-auth" element={<UserAuth />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/editor" element={<Editor />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/article/:id" element={<Article />} />
+                <Route path="/articles" element={<Articles />} />
+                <Route path="/profile/:userId" element={<EditorProfile />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/drafts" element={<Drafts />} />
+                <Route path="/changelog" element={<Changelog />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </OnlineStatusProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </IpBanCheck>
     </TooltipProvider>
   </QueryClientProvider>
 );

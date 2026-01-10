@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Users, FileText, Bell, Check, X, Ban, Trash2, 
-  Loader2, User, Clock, ShieldCheck, MapPin
+  Loader2, User, Clock, ShieldCheck, MapPin, Globe
 } from 'lucide-react';
 import { UserIpDialog } from '@/components/UserIpDialog';
+import { IpBanManager } from '@/components/IpBanManager';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -477,6 +478,10 @@ export default function AdminPage() {
               <FileText className="w-4 h-4" />
               文章管理
             </TabsTrigger>
+            <TabsTrigger value="ip-ban" className="gap-2">
+              <Globe className="w-4 h-4" />
+              IP封禁
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="requests">
@@ -635,6 +640,10 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="ip-ban">
+            <IpBanManager />
           </TabsContent>
         </Tabs>
       </main>
