@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { AuthorBadge } from '@/components/AuthorBadge';
 import { toast } from 'sonner';
@@ -160,10 +160,12 @@ const CommentItem = memo(({
   return (
     <div className={`${depth > 0 ? 'ml-8 border-l-2 border-border pl-4' : ''}`}>
       <div className="flex gap-3 py-3">
-        <Avatar className="w-8 h-8 flex-shrink-0">
-          <AvatarImage src={comment.profiles?.avatar_url || ''} />
-          <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          userId={comment.user_id}
+          avatarUrl={comment.profiles?.avatar_url}
+          fallback={comment.profiles?.real_name}
+          size="sm"
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm">{comment.profiles?.real_name || '未知用户'}</span>
