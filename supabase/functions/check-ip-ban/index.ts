@@ -40,7 +40,7 @@ serve(async (req: Request) => {
     // Check if IP is banned
     const { data, error } = await supabase
       .from("banned_ips")
-      .select("id")
+      .select("id, reason")
       .eq("ip", clientIp)
       .maybeSingle();
 
@@ -53,7 +53,11 @@ serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ banned: data !== null, ip: clientIp }),
+      JSON.stringify({ 
+        banned: data !== null, 
+        ip: clientIp,
+        reason: data?.reason || null 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

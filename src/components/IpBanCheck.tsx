@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Ban } from 'lucide-react';
+import { Ban, AlertCircle } from 'lucide-react';
 
 interface IpBanCheckProps {
   children: React.ReactNode;
@@ -8,6 +8,7 @@ interface IpBanCheckProps {
 
 export function IpBanCheck({ children }: IpBanCheckProps) {
   const [isBanned, setIsBanned] = useState(false);
+  const [banReason, setBanReason] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function IpBanCheck({ children }: IpBanCheckProps) {
         }
 
         setIsBanned(data?.banned === true);
+        setBanReason(data?.reason || null);
       } catch (err) {
         console.error('IP ban check error:', err);
       } finally {
@@ -45,8 +47,22 @@ export function IpBanCheck({ children }: IpBanCheckProps) {
             <Ban className="w-10 h-10 text-destructive" />
           </div>
           <h1 className="text-2xl font-bold mb-2">访问被拒绝</h1>
-          <p className="text-muted-foreground">
-            您的IP地址已被封禁，无法访问本网站。如有疑问，请联系管理员。
+          <p className="text-muted-foreground mb-4">
+            您的IP地址已被封禁，无法访问本网站。
+          </p>
+          
+          {banReason && (
+            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 mt-4">
+              <div className="flex items-center gap-2 text-destructive mb-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="font-medium">封禁原因</span>
+              </div>
+              <p className="text-sm text-muted-foreground">{banReason}</p>
+            </div>
+          )}
+          
+          <p className="text-sm text-muted-foreground mt-4">
+            如有疑问，请联系管理员。
           </p>
         </div>
       </div>

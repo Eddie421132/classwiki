@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchBox } from '@/components/SearchBox';
 import { ArticleCard } from '@/components/ArticleCard';
-import { DailyLimitBanner } from '@/components/DailyLimitBanner';
+import { GuestLimitBanner } from '@/components/GuestLimitBanner';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useGuestArticleLimit } from '@/hooks/useGuestArticleLimit';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, BookOpen, Users, FileText } from 'lucide-react';
 
 interface Article {
@@ -23,9 +25,12 @@ interface Article {
 
 const Index = () => {
   const navigate = useNavigate();
-  const [articles, setArticles] = useState<Article[]>([]);
+  const { user } = useAuth();
+  const [allArticles, setAllArticles] = useState<Article[]>([]);
+  const [displayArticles, setDisplayArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, editors: 0 });
+  const { initializeAllowedArticles, allowedArticles, isGuest, isInitialized } = useGuestArticleLimit();
 
   useEffect(() => {
     fetchArticles();
@@ -34,6 +39,7 @@ const Index = () => {
 
   const fetchArticles = async () => {
     try {
+      // Fetch more articles for guest random selection
       const { data, error } = await supabase
         .from('articles')
         .select(`
@@ -51,7 +57,7 @@ const Index = () => {
         .order('is_pinned', { ascending: false })
         .order('pinned_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(50); // Fetch more for random selection
 
       if (error) throw error;
 
@@ -72,15 +78,30 @@ const Index = () => {
       const articlesWithRoles = (data || []).map(article => ({
         ...article,
         authorRole: roleMap.get(article.author_id) || null,
-      }));
+      })) as unknown as Article[];
 
-      setArticles(articlesWithRoles as unknown as Article[]);
+      setAllArticles(articlesWithRoles);
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Apply guest limit when articles or auth state changes
+  useEffect(() => {
+    if (!isInitialized || allArticles.length === 0) return;
+
+    if (user) {
+      // Logged in users see all articles (limit to 6 for display)
+      setDisplayArticles(allArticles.slice(0, 6));
+    } else {
+      // Guest users see only allowed random articles
+      const allowed = initializeAllowedArticles(allArticles.map(a => a.id));
+      const filteredArticles = allArticles.filter(a => allowed?.includes(a.id) || allowedArticles.includes(a.id));
+      setDisplayArticles(filteredArticles);
+    }
+  }, [allArticles, user, isInitialized, allowedArticles, initializeAllowedArticles]);
 
   const fetchStats = async () => {
     try {
@@ -147,25 +168,29 @@ const Index = () => {
       {/* Recent Articles */}
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <DailyLimitBanner />
+          <GuestLimitBanner />
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <BookOpen className="w-6 h-6 text-primary" />
-              <h2 className="font-serif text-2xl font-bold">最新文章</h2>
+              <h2 className="font-serif text-2xl font-bold">
+                {isGuest ? '今日推荐' : '最新文章'}
+              </h2>
             </div>
-            <Button variant="outline" onClick={() => navigate('/articles')} className="gap-2">
-              <FileText className="w-4 h-4" />
-              查看全部
-            </Button>
+            {user && (
+              <Button variant="outline" onClick={() => navigate('/articles')} className="gap-2">
+                <FileText className="w-4 h-4" />
+                查看全部
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : articles.length > 0 ? (
+          ) : displayArticles.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {articles.map((article, index) => (
+              {displayArticles.map((article, index) => (
                 <div 
                   key={article.id} 
                   className="animate-fade-in"
