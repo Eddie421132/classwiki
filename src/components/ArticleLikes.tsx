@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { UserAvatar } from '@/components/UserAvatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface LikeUser {
   user_id: string;
@@ -126,12 +126,10 @@ export function ArticleLikes({ articleId }: ArticleLikesProps) {
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {likes.map((like) => (
                 <div key={like.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                  <UserAvatar
-                    userId={like.user_id}
-                    avatarUrl={like.profiles?.avatar_url}
-                    fallback={like.profiles?.real_name}
-                    size="sm"
-                  />
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={like.profiles?.avatar_url || ''} />
+                    <AvatarFallback>{like.profiles?.real_name?.[0] || '?'}</AvatarFallback>
+                  </Avatar>
                   <div>
                     <p className="font-medium text-sm">{like.profiles?.real_name || '未知用户'}</p>
                     <p className="text-xs text-muted-foreground">

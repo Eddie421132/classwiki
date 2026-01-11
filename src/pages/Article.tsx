@@ -3,15 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGuestArticleLimit } from '@/hooks/useGuestArticleLimit';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AuthorBadge } from '@/components/AuthorBadge';
-import { UserAvatar } from '@/components/UserAvatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { BackgroundMusicPlayer } from '@/components/BackgroundMusicPlayer';
 import { toast } from 'sonner';
-import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff } from 'lucide-react';
+import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff, Lock, LogIn } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,16 +48,28 @@ export default function ArticlePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin, isApprovedEditor } = useAuth();
+  const { canViewArticle, isInitialized } = useGuestArticleLimit();
   const [article, setArticle] = useState<Article | null>(null);
   const [authorRole, setAuthorRole] = useState<'admin' | 'editor' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      // All users (guests and logged-in) can view articles via direct link
-      fetchArticle();
+    if (id && isInitialized) {
+      // Logged in users can view all articles
+      if (user) {
+        fetchArticle();
+      } else {
+        // Guest users - check if this article is in their allowed list
+        if (canViewArticle(id)) {
+          fetchArticle();
+        } else {
+          setAccessDenied(true);
+          setIsLoading(false);
+        }
+      }
     }
-  }, [id]);
+  }, [id, isInitialized, user, canViewArticle]);
 
   const fetchArticle = async () => {
     try {
@@ -171,10 +184,38 @@ export default function ArticlePage() {
     return () => document.removeEventListener('click', handleImageClick);
   }, [article]);
 
-  if (isLoading) {
+  if (isLoading || !isInitialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 pt-24 pb-12">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="wiki-card p-12">
+              <Lock className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
+              <h1 className="text-2xl font-bold mb-4">无法访问此文章</h1>
+              <p className="text-muted-foreground mb-6">
+                访客每天仅可随机查看 5 篇文章。登录后可查看全部内容。
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" onClick={() => navigate('/')}>
+                  返回首页
+                </Button>
+                <Button onClick={() => navigate('/user-auth')} className="gap-2">
+                  <LogIn className="w-4 h-4" />
+                  立即登录
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -221,13 +262,11 @@ export default function ArticlePage() {
 
             <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-6 border-b border-border">
               <div className="flex items-center gap-4">
-                <Link to={`/profile/${article.author_id}`} className="hover:ring-2 ring-primary rounded-full transition-all">
-                  <UserAvatar
-                    userId={article.author_id}
-                    avatarUrl={article.profiles?.avatar_url}
-                    fallback={article.profiles?.real_name}
-                    size="md"
-                  />
+                <Link to={`/profile/${article.author_id}`}>
+                  <Avatar className="w-10 h-10 hover:ring-2 ring-primary transition-all">
+                    <AvatarImage src={article.profiles?.avatar_url || ''} />
+                    <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
+                  </Avatar>
                 </Link>
                 <div>
                   <div className="flex items-center gap-2">

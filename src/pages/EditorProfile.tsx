@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AuthorBadge } from '@/components/AuthorBadge';
-import { UserAvatar } from '@/components/UserAvatar';
 import { ArticleCard } from '@/components/ArticleCard';
 import { Loader2, User, Calendar, FileText, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -139,12 +139,10 @@ export default function EditorProfilePage() {
         {/* Profile Card */}
         <div className="wiki-card mb-8 animate-fade-in">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <UserAvatar
-              userId={profile.user_id}
-              avatarUrl={profile.avatar_url}
-              fallback={profile.real_name}
-              size="xl"
-            />
+            <Avatar className="w-24 h-24">
+              <AvatarImage src={profile.avatar_url || ''} />
+              <AvatarFallback><User className="w-10 h-10" /></AvatarFallback>
+            </Avatar>
             
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
