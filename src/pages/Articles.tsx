@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { ArticleCard } from '@/components/ArticleCard';
 import { Button } from '@/components/ui/button';
-import { Loader2, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, BookOpen, ChevronLeft, ChevronRight, Lock, LogIn } from 'lucide-react';
 
 interface Article {
   id: string;
@@ -25,6 +26,8 @@ interface Article {
 const ARTICLES_PER_PAGE = 12;
 
 export default function ArticlesPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +98,31 @@ export default function ArticlesPage() {
     setSearchParams({ page: page.toString() });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Guest users cannot access all articles page
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <main className="container mx-auto px-4 pt-24 pb-12">
+          <div className="max-w-md mx-auto text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+              <Lock className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">需要登录</h1>
+            <p className="text-muted-foreground mb-6">
+              访客用户每天只能查看首页的5篇随机文章。登录后可查看全部文章。
+            </p>
+            <Button onClick={() => navigate('/user-auth')} className="gap-2">
+              <LogIn className="w-4 h-4" />
+              立即登录
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
