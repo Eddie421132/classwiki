@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,14 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { OnlineIndicator } from '@/components/OnlineIndicator';
-import { useOnlineUsers } from '@/hooks/useOnlineUsers';
 
 export function Header() {
   const { user, profile, isAdmin, isSecondAdmin, isApprovedEditor, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
-  const onlineUserIds = useOnlineUsers();
-  const isCurrentUserOnline = user?.id ? onlineUserIds.has(user.id) : false;
 
   const handleSignOut = async () => {
     await signOut();
@@ -74,17 +70,12 @@ export function Header() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.real_name} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {profile?.real_name?.charAt(0) || <User className="w-4 h-4" />}
-                      </AvatarFallback>
-                    </Avatar>
-                    <OnlineIndicator 
-                      isOnline={isCurrentUserOnline} 
-                      size="sm" 
-                      className="bottom-0 right-0"
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                    <UserAvatar
+                      userId={user.id}
+                      avatarUrl={profile?.avatar_url}
+                      fallback={profile?.real_name}
+                      size="md"
                     />
                   </Button>
                 </DropdownMenuTrigger>
