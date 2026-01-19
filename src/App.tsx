@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlassBackground } from "@/components/GlassBackground";
 import { IpBanCheck } from "@/components/IpBanCheck";
@@ -25,6 +26,20 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// 滚动恢复组件 - 只在非文章页面滚动到顶部
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // 文章页面不自动滚动到顶部，保持返回时的位置
+    if (!pathname.startsWith('/article/')) {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -34,6 +49,7 @@ const App = () => (
         <IpBanCheck>
           <AutoLoginProvider>
             <BrowserRouter>
+              <ScrollToTop />
               <AuthProvider>
             <OnlineStatusProvider>
               <Routes>
