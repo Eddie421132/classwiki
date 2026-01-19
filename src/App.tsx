@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlassBackground } from "@/components/GlassBackground";
 import { IpBanCheck } from "@/components/IpBanCheck";
@@ -26,15 +26,35 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// 滚动恢复组件 - 只在非文章页面滚动到顶部
-function ScrollToTop() {
+// 滚动位置管理组件 - 进入文章时保存位置，返回时恢复
+function ScrollRestoration() {
   const { pathname } = useLocation();
+  const prevPathRef = useRef<string>('');
+  const scrollPositions = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
-    // 文章页面不自动滚动到顶部，保持返回时的位置
-    if (!pathname.startsWith('/article/')) {
+    const prevPath = prevPathRef.current;
+    const isEnteringArticle = pathname.startsWith('/article/') && !prevPath.startsWith('/article/');
+    const isLeavingArticle = !pathname.startsWith('/article/') && prevPath.startsWith('/article/');
+
+    if (isEnteringArticle) {
+      // 进入文章页面时，保存当前页面的滚动位置
+      scrollPositions.current.set(prevPath, window.scrollY);
+    } else if (isLeavingArticle) {
+      // 离开文章页面时，恢复之前保存的滚动位置
+      const savedPosition = scrollPositions.current.get(pathname);
+      if (savedPosition !== undefined) {
+        // 使用 setTimeout 确保页面渲染完成后再滚动
+        setTimeout(() => {
+          window.scrollTo(0, savedPosition);
+        }, 0);
+      }
+    } else if (!pathname.startsWith('/article/')) {
+      // 其他页面间导航，滚动到顶部
       window.scrollTo(0, 0);
     }
+
+    prevPathRef.current = pathname;
   }, [pathname]);
 
   return null;
@@ -49,7 +69,7 @@ const App = () => (
         <IpBanCheck>
           <AutoLoginProvider>
             <BrowserRouter>
-              <ScrollToTop />
+              <ScrollRestoration />
               <AuthProvider>
             <OnlineStatusProvider>
               <Routes>
