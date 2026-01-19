@@ -39,7 +39,7 @@ export function UserAvatar({
   };
 
   return (
-    <div className="relative inline-block flex-shrink-0">
+    <div className="relative inline-flex flex-shrink-0">
       <Avatar className={cn(sizeClasses[size], className)}>
         <AvatarImage src={avatarUrl || ''} />
         <AvatarFallback>
@@ -50,7 +50,7 @@ export function UserAvatar({
         <OnlineIndicator 
           isOnline={isOnline} 
           size={indicatorSizes[size]} 
-          className="bottom-0 right-0"
+          className="-bottom-0.5 -right-0.5"
         />
       )}
     </div>
