@@ -22,6 +22,7 @@ import EditorProfile from "./pages/EditorProfile";
 import Settings from "./pages/Settings";
 import Drafts from "./pages/Drafts";
 import Changelog from "./pages/Changelog";
+import Suggestions from "./pages/Suggestions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/drafts" element={<Drafts />} />
                 <Route path="/changelog" element={<Changelog />} />
+                <Route path="/suggestions" element={<Suggestions />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </OnlineStatusProvider>

@@ -11,3 +11,27 @@ verify_jwt = false
 
 [functions.verify-email-code]
 verify_jwt = false
+
+[functions.check-ip-registration]
+verify_jwt = false
+
+[functions.record-ip-registration]
+verify_jwt = false
+
+[functions.check-ip-ban]
+verify_jwt = false
+
+[functions.log-user-ip]
+verify_jwt = false
+
+[functions.bind-ip]
+verify_jwt = false
+
+[functions.unbind-ip]
+verify_jwt = false
+
+[functions.auto-login-by-ip]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false

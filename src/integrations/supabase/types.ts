@@ -312,6 +312,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_registrations: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ip_user_bindings: {
         Row: {
           created_at: string
@@ -461,6 +482,42 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      suggestions: {
+        Row: {
+          admin_response: string | null
+          content: string
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

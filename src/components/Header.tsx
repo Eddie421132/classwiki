@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History } from 'lucide-react';
+import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History, MessageSquare } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import {
   DropdownMenu,
@@ -93,6 +93,12 @@ export function Header() {
                     <DropdownMenuItem onClick={() => navigate('/drafts')}>
                       <FileText className="w-4 h-4 mr-2" />
                       草稿箱
+                    </DropdownMenuItem>
+                  )}
+                  {!canAccessAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/suggestions')}>
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      建议箱
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={() => navigate('/changelog')}>

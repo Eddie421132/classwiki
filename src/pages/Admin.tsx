@@ -11,10 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Users, FileText, Bell, Check, X, Ban, Trash2, 
-  Loader2, User, Clock, ShieldCheck, MapPin, Globe
+  Loader2, User, Clock, ShieldCheck, MapPin, Globe, MessageSquare
 } from 'lucide-react';
 import { UserIpDialog } from '@/components/UserIpDialog';
 import { IpBanManager } from '@/components/IpBanManager';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +59,16 @@ interface Article {
 interface UserRole {
   user_id: string;
   role: string;
+}
+
+interface Suggestion {
+  id: string;
+  user_id: string;
+  content: string;
+  status: string;
+  admin_response: string | null;
+  created_at: string;
+  profiles?: { real_name: string } | null;
 }
 
 interface UserCardProps {
@@ -204,9 +216,13 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [adminUserIds, setAdminUserIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const isMainAdmin = isAdmin && !isSecondAdmin;
   const canAccessAdmin = isAdmin || isSecondAdmin;
@@ -251,6 +267,16 @@ export default function AdminPage() {
         `)
         .order('created_at', { ascending: false });
 
+      // Fetch pending suggestions
+      const { data: suggestionsData } = await supabase
+        .from('suggestions')
+        .select(`
+          *,
+          profiles!suggestions_user_id_fkey(real_name)
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
       // Fetch privileged roles (admin + second_admin)
       const { data: rolesData, error: rolesError } = await supabase
         .rpc('get_admin_and_second_admin_roles');
@@ -260,6 +286,7 @@ export default function AdminPage() {
       setRequests(requestsData || []);
       setUsers(usersData || []);
       setArticles((articlesData || []) as unknown as Article[]);
+      setSuggestions((suggestionsData || []) as unknown as Suggestion[]);
       setUserRoles((rolesData || []) as UserRole[]);
       
       // Get main admin user IDs
@@ -441,6 +468,54 @@ export default function AdminPage() {
     return false;
   };
 
+  const handleApproveSuggestion = async (suggestion: Suggestion) => {
+    try {
+      await supabase
+        .from('suggestions')
+        .update({ 
+          status: 'approved', 
+          reviewed_by: user?.id,
+          reviewed_at: new Date().toISOString(),
+          admin_response: '您的建议已被采纳，感谢您的反馈！'
+        })
+        .eq('id', suggestion.id);
+
+      toast.success('已采纳建议');
+      fetchData();
+    } catch (error) {
+      console.error('Approve suggestion error:', error);
+      toast.error('操作失败');
+    }
+  };
+
+  const handleRejectSuggestion = async () => {
+    if (!selectedSuggestion || !rejectReason.trim()) {
+      toast.error('请输入拒绝理由');
+      return;
+    }
+
+    try {
+      await supabase
+        .from('suggestions')
+        .update({ 
+          status: 'rejected', 
+          reviewed_by: user?.id,
+          reviewed_at: new Date().toISOString(),
+          admin_response: rejectReason.trim()
+        })
+        .eq('id', selectedSuggestion.id);
+
+      toast.success('已拒绝建议');
+      setRejectDialogOpen(false);
+      setSelectedSuggestion(null);
+      setRejectReason('');
+      fetchData();
+    } catch (error) {
+      console.error('Reject suggestion error:', error);
+      toast.error('操作失败');
+    }
+  };
+
   if (authLoading || !user || !canAccessAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -462,7 +537,7 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap">
             <TabsTrigger value="requests" className="gap-2">
               <Bell className="w-4 h-4" />
               待审核
@@ -473,6 +548,13 @@ export default function AdminPage() {
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               用户管理
+            </TabsTrigger>
+            <TabsTrigger value="suggestions" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              用户建议
+              {suggestions.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{suggestions.length}</Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="articles" className="gap-2">
               <FileText className="w-4 h-4" />
@@ -634,6 +716,100 @@ export default function AdminPage() {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="suggestions">
+            <Card>
+              <CardHeader>
+                <CardTitle>用户建议</CardTitle>
+                <CardDescription>管理用户提交的网站建议</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : suggestions.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">暂无待处理的建议</p>
+                ) : (
+                  <div className="space-y-4">
+                    {suggestions.map((suggestion) => (
+                      <div key={suggestion.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="font-medium">{suggestion.profiles?.real_name || '未知用户'}</p>
+                              <span className="text-sm text-muted-foreground">
+                                {formatDate(suggestion.created_at)}
+                              </span>
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm">{suggestion.content}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveSuggestion(suggestion)}
+                              className="gap-1"
+                            >
+                              <Check className="w-4 h-4" />
+                              采纳
+                            </Button>
+                            <Dialog open={rejectDialogOpen && selectedSuggestion?.id === suggestion.id} onOpenChange={(open) => {
+                              if (!open) {
+                                setRejectDialogOpen(false);
+                                setSelectedSuggestion(null);
+                                setRejectReason('');
+                              }
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setSelectedSuggestion(suggestion);
+                                    setRejectDialogOpen(true);
+                                  }}
+                                  className="gap-1"
+                                >
+                                  <X className="w-4 h-4" />
+                                  拒绝
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>拒绝建议</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <p className="text-sm text-muted-foreground">请输入拒绝理由，将同步给用户：</p>
+                                  <Textarea
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    placeholder="请输入拒绝理由..."
+                                    rows={4}
+                                  />
+                                </div>
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => {
+                                    setRejectDialogOpen(false);
+                                    setSelectedSuggestion(null);
+                                    setRejectReason('');
+                                  }}>
+                                    取消
+                                  </Button>
+                                  <Button variant="destructive" onClick={handleRejectSuggestion}>
+                                    确认拒绝
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

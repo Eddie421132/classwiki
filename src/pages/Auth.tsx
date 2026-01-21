@@ -107,6 +107,17 @@ export default function AuthPage() {
     }
 
     try {
+      // 检查IP是否已注册过用户
+      const { data: ipCheckData, error: ipCheckError } = await supabase.functions.invoke('check-ip-registration');
+      
+      if (ipCheckError) {
+        console.error('IP check error:', ipCheckError);
+      } else if (ipCheckData && !ipCheckData.canRegister) {
+        toast.error('该设备已注册过账户，每个设备只能注册一个账户');
+        setIsLoading(false);
+        return;
+      }
+
       // Generate a valid email using only numbers (avoid Chinese characters)
       const uniqueEmail = `user_${Date.now()}@class7wiki.local`;
       
@@ -165,6 +176,9 @@ export default function AuthPage() {
           });
 
         if (requestError) throw requestError;
+
+        // 记录IP注册
+        await supabase.functions.invoke('record-ip-registration');
 
         // Create admin message
         await supabase
