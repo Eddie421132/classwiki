@@ -92,6 +92,17 @@ export default function UserAuthPage() {
     }
 
     try {
+      // 检查IP是否已注册过用户
+      const { data: ipCheckData, error: ipCheckError } = await supabase.functions.invoke('check-ip-registration');
+      
+      if (ipCheckError) {
+        console.error('IP check error:', ipCheckError);
+      } else if (ipCheckData && !ipCheckData.canRegister) {
+        toast.error('该设备已注册过账户，每个设备只能注册一个账户');
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: registerEmail.trim(),
         password: registerPassword,
@@ -135,6 +146,9 @@ export default function UserAuthPage() {
           });
 
         if (profileError) throw profileError;
+
+        // 记录IP注册
+        await supabase.functions.invoke('record-ip-registration');
 
         toast.success('注册成功！');
         await refreshProfile();
