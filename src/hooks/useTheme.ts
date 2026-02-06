@@ -4,6 +4,19 @@ export type ThemeStyle = 'default' | 'glassmorphism' | 'aurora' | 'minimal' | 'w
 
 const THEME_STORAGE_KEY = 'wiki-theme-style';
 
+// 在模块加载时立即应用主题，避免闪烁
+function applyThemeImmediately() {
+  if (typeof window !== 'undefined') {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeStyle;
+    if (savedTheme && savedTheme !== 'default') {
+      document.documentElement.classList.add(`theme-${savedTheme}`);
+    }
+  }
+}
+
+// 立即执行
+applyThemeImmediately();
+
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeStyle>(() => {
     if (typeof window !== 'undefined') {

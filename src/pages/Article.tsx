@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import { AuthorBadge } from '@/components/AuthorBadge';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { BackgroundMusicPlayer } from '@/components/BackgroundMusicPlayer';
+import { transformHtmlLinks } from '@/lib/linkTransformer';
 import { toast } from 'sonner';
 import { Loader2, Calendar, User, ArrowLeft, Trash2, Pin, PinOff } from 'lucide-react';
 import {
@@ -296,13 +297,16 @@ export default function ArticlePage() {
 
             <div 
             className="prose prose-lg max-w-none [&_img]:cursor-zoom-in [&_video]:max-w-full [&_video]:rounded-lg"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content, {
-              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'video', 'source', 'div', 'iframe', 'span'],
-              ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel', 'controls', 'type', 'style', 'width', 'height', 'allowfullscreen', 'frameborder', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload'],
-              ADD_TAGS: ['video', 'source'],
-              ADD_ATTR: ['controls', 'src', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload', 'style'],
-              ALLOW_DATA_ATTR: false,
-            }) }}
+            dangerouslySetInnerHTML={{ __html: (() => {
+              const sanitized = DOMPurify.sanitize(article.content, {
+                ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'video', 'source', 'div', 'iframe', 'span', 'svg', 'path', 'polyline', 'line'],
+                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel', 'controls', 'type', 'style', 'width', 'height', 'allowfullscreen', 'frameborder', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload', 'xmlns', 'viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'd', 'points', 'x1', 'x2', 'y1', 'y2'],
+                ADD_TAGS: ['video', 'source', 'svg', 'path', 'polyline', 'line'],
+                ADD_ATTR: ['controls', 'src', 'autoplay', 'loop', 'muted', 'playsinline', 'poster', 'preload', 'style'],
+                ALLOW_DATA_ATTR: false,
+              });
+              return transformHtmlLinks(sanitized);
+            })() }}
             />
 
             <div className="mt-8 pt-6 border-t border-border">
