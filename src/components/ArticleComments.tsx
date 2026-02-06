@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { AuthorBadge } from '@/components/AuthorBadge';
+import { CommentContent } from '@/lib/linkTransformer';
 import { toast } from 'sonner';
 import { Loader2, MessageCircle, Reply, Trash2, User, ImageIcon, Video, X } from 'lucide-react';
 
@@ -172,7 +173,9 @@ const CommentItem = memo(({
             <AuthorBadge role={userRole} size="sm" />
             <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
           </div>
-          <p className="text-sm mt-1 whitespace-pre-wrap break-words">{comment.content}</p>
+          <p className="text-sm mt-1">
+            <CommentContent content={comment.content} />
+          </p>
           
           {comment.image_url && (
             <div className="mt-2">
