@@ -1,17 +1,21 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import Youtube from '@tiptap/extension-youtube';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Video as VideoExtension } from '@/components/extensions/VideoExtension';
 import { 
   Bold, Italic, Strikethrough, Code, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Undo, Redo, ImageIcon, Video as VideoIcon, Loader2
+  List, ListOrdered, Quote, Undo, Redo, ImageIcon, Video as VideoIcon, Loader2, Link as LinkIcon
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface RichTextEditorProps {
   content: string;
@@ -23,6 +27,8 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const isApplyingExternalContentRef = useRef(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const { user } = useAuth();
 
   const editor = useEditor({
@@ -31,6 +37,14 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       Image.configure({
         HTMLAttributes: {
           class: 'rounded-lg max-w-full h-auto',
+        },
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-primary underline',
+          target: '_blank',
+          rel: 'noopener noreferrer',
         },
       }),
       Youtube.configure({
@@ -149,6 +163,15 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     e.target.value = '';
   };
 
+  const handleInsertLink = () => {
+    if (!linkUrl.trim() || !editor) return;
+    let url = linkUrl.trim();
+    if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+    editor.chain().focus().setLink({ href: url, target: '_blank' }).run();
+    setLinkUrl('');
+    setIsLinkPopoverOpen(false);
+  };
+
   if (!editor) return null;
 
   const ToolbarButton = ({ 
@@ -260,6 +283,48 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
             <VideoIcon className="w-4 h-4" />
           )}
         </ToolbarButton>
+
+        <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={`p-2 rounded hover:bg-muted transition-colors ${
+                editor.isActive('link') ? 'bg-primary text-primary-foreground' : ''
+              }`}
+            >
+              <LinkIcon className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">插入链接</p>
+              <Input
+                placeholder="输入链接地址，例如 https://example.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleInsertLink()}
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                {editor.isActive('link') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      editor.chain().focus().unsetLink().run();
+                      setIsLinkPopoverOpen(false);
+                    }}
+                  >
+                    移除链接
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleInsertLink} disabled={!linkUrl.trim()}>
+                  确认
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         
         <div className="flex-1" />
         
