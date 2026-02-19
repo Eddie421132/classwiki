@@ -185,10 +185,10 @@ export default function ArticlePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-safe md:pb-0">
       <Header />
       
-      <main className="container mx-auto px-4 pt-24 pb-12">
+      <main className="container mx-auto px-4 pt-20 md:pt-24 pb-12">
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"

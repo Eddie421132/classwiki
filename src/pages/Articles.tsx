@@ -102,7 +102,7 @@ export default function ArticlesPage() {
   // Guest users cannot access all articles page
   if (!authLoading && !user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-safe md:pb-0">
         <Header />
         
         <main className="container mx-auto px-4 pt-24 pb-12">
@@ -125,10 +125,10 @@ export default function ArticlesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-safe md:pb-0">
       <Header />
       
-      <main className="container mx-auto px-4 pt-24 pb-12">
+      <main className="container mx-auto px-4 pt-20 md:pt-24 pb-12">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold flex items-center gap-3 mb-2">
             <BookOpen className="w-8 h-8 text-primary" />
@@ -145,7 +145,7 @@ export default function ArticlesPage() {
           </div>
         ) : articles.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
               {articles.map((article) => (
                 <ArticleCard 
                   key={article.id} 

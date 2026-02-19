@@ -164,7 +164,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-safe md:pb-0">
       <Header />
 
       <main className="container mx-auto px-4 pt-24 pb-12">

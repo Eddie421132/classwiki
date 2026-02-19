@@ -724,6 +724,15 @@
   }
 }
 
+/* Safe area for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-safe {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
 /* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 8px;
