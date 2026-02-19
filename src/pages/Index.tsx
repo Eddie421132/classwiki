@@ -120,11 +120,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-safe md:pb-0">
       <Header />
       
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 overflow-hidden">
+      <section className="relative pt-24 md:pt-32 pb-12 md:pb-20 px-4 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
@@ -166,7 +166,7 @@ const Index = () => {
       </section>
 
       {/* Recent Articles */}
-      <section className="py-16 px-4 bg-muted/30">
+      <section className="py-10 md:py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
           <GuestLimitBanner />
           <div className="flex items-center justify-between mb-8">
@@ -189,7 +189,7 @@ const Index = () => {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : displayArticles.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {displayArticles.map((article, index) => (
                 <div 
                   key={article.id} 
@@ -220,7 +220,7 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border">
+      <footer className="py-6 md:py-8 px-4 border-t border-border">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>© 2025 7班Wiki百科 · 用知识连接我们</p>
         </div>

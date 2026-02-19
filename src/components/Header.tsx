@@ -35,12 +35,12 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="font-serif text-xl font-bold text-primary hover:opacity-80 transition-opacity">
+      <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
+        <Link to="/" className="font-serif text-lg md:text-xl font-bold text-primary hover:opacity-80 transition-opacity">
           7班Wiki
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {isLoading ? (
             <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
           ) : user ? (
@@ -50,7 +50,7 @@ export function Header() {
                   variant="outline"
                   size="sm"
                   onClick={() => navigate('/admin')}
-                  className="gap-2"
+                  className="hidden md:flex gap-2"
                 >
                   <Bell className="w-4 h-4" />
                   管理中心
@@ -61,7 +61,7 @@ export function Header() {
                 <Button
                   size="sm"
                   onClick={() => navigate('/editor')}
-                  className="gap-2 bg-primary text-primary-foreground"
+                  className="hidden md:flex gap-2 bg-primary text-primary-foreground"
                 >
                   <Edit className="w-4 h-4" />
                   发布文章
@@ -70,7 +70,7 @@ export function Header() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                  <Button variant="ghost" className="relative h-9 w-9 md:h-10 md:w-10 rounded-full p-0">
                     <UserAvatar
                       userId={user.id}
                       avatarUrl={profile?.avatar_url}
@@ -118,7 +118,7 @@ export function Header() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/admin-login')}
-                className="gap-2"
+                className="hidden md:flex gap-2"
               >
                 <Shield className="w-4 h-4" />
                 管理员
@@ -127,18 +127,20 @@ export function Header() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/user-auth')}
-                className="gap-2"
+                className="gap-1.5"
               >
                 <User className="w-4 h-4" />
-                用户登录
+                <span className="hidden md:inline">用户登录</span>
+                <span className="md:hidden">登录</span>
               </Button>
               <Button
                 size="sm"
                 onClick={() => navigate('/auth')}
-                className="gap-2 bg-primary text-primary-foreground"
+                className="gap-1.5 bg-primary text-primary-foreground"
               >
                 <Edit className="w-4 h-4" />
-                编者入口
+                <span className="hidden md:inline">编者入口</span>
+                <span className="md:hidden">编者</span>
               </Button>
             </>
           )}
@@ -147,4 +149,3 @@ export function Header() {
     </header>
   );
 }
-

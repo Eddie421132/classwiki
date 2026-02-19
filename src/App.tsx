@@ -24,6 +24,7 @@ import Drafts from "./pages/Drafts";
 import Changelog from "./pages/Changelog";
 import Suggestions from "./pages/Suggestions";
 import NotFound from "./pages/NotFound";
+import { BottomNav } from "@/components/BottomNav";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +91,7 @@ const App = () => (
                 <Route path="/suggestions" element={<Suggestions />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <BottomNav />
             </OnlineStatusProvider>
               </AuthProvider>
             </BrowserRouter>
