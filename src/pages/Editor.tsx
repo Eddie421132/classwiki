@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { AudioUploadButton } from '@/components/AudioUploadButton';
+import { sendPushNotification } from '@/lib/pushNotification';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -221,14 +222,14 @@ export default function EditorPage() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('articles').insert({
+      const { data: articleData, error } = await supabase.from('articles').insert({
         title: title.trim(),
         content,
         cover_image_url: coverImage,
         background_music_url: backgroundMusic,
         author_id: user!.id,
         published: true,
-      });
+      }).select('id').single();
 
       if (error) throw error;
 
@@ -236,6 +237,21 @@ export default function EditorPage() {
       if (draftId) {
         await supabase.from('article_drafts').delete().eq('id', draftId);
       }
+
+      // Send push notification for new article
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('real_name')
+        .eq('user_id', user!.id)
+        .single();
+
+      sendPushNotification({
+        type: 'new_article',
+        articleId: articleData?.id,
+        articleTitle: title.trim(),
+        actorName: profile?.real_name || '未知用户',
+        targetUserId: user!.id,
+      });
 
       toast.success('文章发布成功');
       navigate('/');
