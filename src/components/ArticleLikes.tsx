@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Heart, Loader2, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendPushNotification } from '@/lib/pushNotification';
 import {
   Dialog,
   DialogContent,
@@ -84,6 +85,30 @@ export function ArticleLikes({ articleId }: ArticleLikesProps) {
 
         if (error) throw error;
         setHasLiked(true);
+
+        // Send push notification to article author
+        const { data: article } = await supabase
+          .from('articles')
+          .select('author_id, title')
+          .eq('id', articleId)
+          .single();
+
+        if (article && article.author_id !== user.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('real_name')
+            .eq('user_id', user.id)
+            .single();
+
+          sendPushNotification({
+            type: 'like',
+            articleId,
+            articleTitle: article.title,
+            actorName: profile?.real_name || '未知用户',
+            targetUserId: article.author_id,
+          });
+        }
+
         fetchLikes();
       }
     } catch (error: any) {

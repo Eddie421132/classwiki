@@ -1,12 +1,13 @@
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface OnlineStatusProviderProps {
   children: React.ReactNode;
 }
 
 export function OnlineStatusProvider({ children }: OnlineStatusProviderProps) {
-  // This hook updates the user's online status in the database
   useOnlineStatus();
+  usePushNotifications();
   
   return <>{children}</>;
 }

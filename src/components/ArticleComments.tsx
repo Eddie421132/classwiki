@@ -9,6 +9,7 @@ import { AuthorBadge } from '@/components/AuthorBadge';
 import { CommentContent } from '@/lib/linkTransformer';
 import { toast } from 'sonner';
 import { Loader2, MessageCircle, Reply, Trash2, User, ImageIcon, Video, X } from 'lucide-react';
+import { sendPushNotification } from '@/lib/pushNotification';
 
 interface Comment {
   id: string;
@@ -518,6 +519,29 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
 
       if (error) throw error;
 
+      // Send push notification to article author
+      const { data: article } = await supabase
+        .from('articles')
+        .select('author_id, title')
+        .eq('id', articleId)
+        .single();
+
+      if (article && article.author_id !== user.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('real_name')
+          .eq('user_id', user.id)
+          .single();
+
+        sendPushNotification({
+          type: 'comment',
+          articleId,
+          articleTitle: article.title,
+          actorName: profile?.real_name || '未知用户',
+          targetUserId: article.author_id,
+        });
+      }
+
       setNewComment('');
       setNewCommentImage(null);
       setNewCommentVideo(null);
@@ -558,6 +582,28 @@ export function ArticleComments({ articleId }: ArticleCommentsProps) {
         });
 
       if (error) throw error;
+
+      // Send push notification to parent comment author
+      const { data: parentComment } = await supabase
+        .from('article_comments')
+        .select('user_id')
+        .eq('id', parentId)
+        .single();
+
+      if (parentComment && parentComment.user_id !== user.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('real_name')
+          .eq('user_id', user.id)
+          .single();
+
+        sendPushNotification({
+          type: 'reply',
+          articleId,
+          actorName: profile?.real_name || '未知用户',
+          targetUserId: parentComment.user_id,
+        });
+      }
 
       setReplyContent('');
       setReplyImage(null);
