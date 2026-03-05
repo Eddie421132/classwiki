@@ -3,35 +3,35 @@ import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+const WEBSITE_URL = 'https://classwiki.lovable.app';
+
 export function usePushNotifications() {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user || !Capacitor.isNativePlatform()) return;
+    if (!Capacitor.isNativePlatform()) return;
 
     let cleanup = false;
 
-    const registerPush = async () => {
+    const setup = async () => {
       try {
-        // Dynamically import to avoid errors on web
         const { PushNotifications } = await import('@capacitor/push-notifications');
+        const { Browser } = await import('@capacitor/browser');
 
-        // Request permission
+        // 首次打开应用时请求通知权限
         const permResult = await PushNotifications.requestPermissions();
         if (permResult.receive !== 'granted') {
           console.log('Push notification permission denied');
-          return;
         }
 
-        // Register for push
+        // 注册推送
         await PushNotifications.register();
 
-        // Listen for registration
+        // 监听注册成功，保存 token
         PushNotifications.addListener('registration', async (token) => {
-          if (cleanup) return;
+          if (cleanup || !user) return;
           console.log('Push registration token:', token.value);
 
-          // Save token to database
           const { error } = await supabase
             .from('device_tokens')
             .upsert(
@@ -46,8 +46,6 @@ export function usePushNotifications() {
 
           if (error) {
             console.error('Error saving device token:', error);
-          } else {
-            console.log('Device token saved successfully');
           }
         });
 
@@ -55,25 +53,30 @@ export function usePushNotifications() {
           console.error('Push registration error:', error);
         });
 
-        // Handle notification received while app is in foreground
+        // 前台收到通知
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           console.log('Push notification received:', notification);
         });
 
-        // Handle notification tap
-        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        // 点击通知 → 用默认浏览器打开网站
+        PushNotifications.addListener('pushNotificationActionPerformed', async (action) => {
           console.log('Push notification action:', action);
           const data = action.notification.data;
+          let url = WEBSITE_URL;
           if (data?.articleId) {
-            window.location.href = `/article/${data.articleId}`;
+            url = `${WEBSITE_URL}/article/${data.articleId}`;
           }
+          await Browser.open({ url });
         });
+
+        // 首次打开应用时直接跳转到网站
+        await Browser.open({ url: WEBSITE_URL });
       } catch (e) {
         console.log('Push notifications not available:', e);
       }
     };
 
-    registerPush();
+    setup();
 
     return () => {
       cleanup = true;
