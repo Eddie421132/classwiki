@@ -54,7 +54,7 @@ export async function getRegistrationRequest(userId: string) {
   return { request: data, error };
 }
 
-export async function verifyAdminPassword(password: string): Promise<{ success: boolean; email?: string; password?: string; error?: string }> {
+export async function verifyAdminPassword(password: string): Promise<{ success: boolean; tokenHash?: string; error?: string }> {
   try {
     const { data, error } = await supabase.functions.invoke('admin-auth', {
       body: { password }
