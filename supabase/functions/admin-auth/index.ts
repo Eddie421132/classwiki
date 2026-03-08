@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Server-side admin password - never exposed to client
-const ADMIN_PASSWORD = "791355admin";
 const ADMIN_EMAIL = "admin@class7wiki.local";
 
 const corsHeaders = {
@@ -18,32 +16,31 @@ serve(async (req) => {
   try {
     const { password } = await req.json();
     
-    console.log('Admin auth attempt received');
+    const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD');
+    if (!ADMIN_PASSWORD) {
+      console.error('ADMIN_PASSWORD secret not configured');
+      return new Response(JSON.stringify({ success: false, error: '服务器配置错误' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Validate password server-side
     if (password !== ADMIN_PASSWORD) {
-      console.log('Invalid admin password');
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: '管理员密码错误' 
-      }), {
+      return new Response(JSON.stringify({ success: false, error: '管理员密码错误' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Create Supabase client with service role for admin operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      }
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Try to get existing admin user
+    // Find or create admin user
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     const adminUser = existingUsers?.users?.find(u => u.email === ADMIN_EMAIL);
 
@@ -51,48 +48,25 @@ serve(async (req) => {
 
     if (adminUser) {
       userId = adminUser.id;
-      console.log('Found existing admin user:', userId);
-      
-      // Update password to ensure it matches
-      const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-        password: ADMIN_PASSWORD,
-      });
-      
-      if (updateError) {
-        console.error('Error updating admin password:', updateError);
-      } else {
-        console.log('Admin password updated successfully');
-      }
+      await supabase.auth.admin.updateUserById(userId, { password: ADMIN_PASSWORD });
     } else {
-      // Create admin user
-      console.log('Creating new admin user');
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,
         email_confirm: true,
       });
-
-      if (createError) {
-        console.error('Error creating admin user:', createError);
-        throw createError;
-      }
-
+      if (createError) throw createError;
       userId = newUser.user.id;
 
-      // Create admin profile
       await supabase.from('profiles').insert({
         user_id: userId,
         real_name: '管理员',
         status: 'approved',
       });
-
-      // Assign admin role
       await supabase.from('user_roles').insert({
         user_id: userId,
         role: 'admin',
       });
-
-      console.log('Admin user created successfully:', userId);
     }
 
     // Ensure admin role exists
@@ -104,18 +78,20 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!existingRole) {
-      console.log('Adding missing admin role');
-      await supabase.from('user_roles').insert({
-        user_id: userId,
-        role: 'admin',
-      });
+      await supabase.from('user_roles').insert({ user_id: userId, role: 'admin' });
     }
 
-    // Generate sign-in link or return credentials for client
+    // Generate magic link instead of returning password
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: ADMIN_EMAIL,
+    });
+
+    if (linkError) throw linkError;
+
     return new Response(JSON.stringify({ 
       success: true,
-      email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      tokenHash: linkData.properties.hashed_token,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

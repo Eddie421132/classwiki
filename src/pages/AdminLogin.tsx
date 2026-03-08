@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      // Verify password server-side
+      // Verify password server-side, receive magic link token hash
       const authResult = await verifyAdminPassword(password);
       
       if (!authResult.success) {
@@ -35,14 +35,14 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Sign in with credentials returned from server
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: authResult.email!,
-        password: authResult.password!,
+      // Sign in using magic link token hash (no password sent to client)
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: authResult.tokenHash!,
+        type: 'magiclink',
       });
 
-      if (signInError) {
-        throw signInError;
+      if (verifyError) {
+        throw verifyError;
       }
 
       toast.success('管理员登录成功');
