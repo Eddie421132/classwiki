@@ -712,6 +712,7 @@ export default function AdminPage() {
                           onUnban={handleUnbanUser}
                           onDelete={handleDeleteUser}
                           onToggleSecondAdmin={handleToggleSecondAdmin}
+                          onResetPassword={handleResetPassword}
                           canViewIp={canViewIp}
                         />
                       );
