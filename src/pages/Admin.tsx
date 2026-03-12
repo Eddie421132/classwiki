@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Users, FileText, Bell, Check, X, Ban, Trash2, 
-  Loader2, User, Clock, ShieldCheck, MapPin, Globe, MessageSquare
+  Loader2, User, Clock, ShieldCheck, MapPin, Globe, MessageSquare, KeyRound
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { UserIpDialog } from '@/components/UserIpDialog';
 import { IpBanManager } from '@/components/IpBanManager';
 import { Textarea } from '@/components/ui/textarea';
@@ -81,6 +82,7 @@ interface UserCardProps {
   onUnban: (profile: Profile) => void;
   onDelete: (profile: Profile) => void;
   onToggleSecondAdmin: (profile: Profile, isCurrentlySecondAdmin: boolean) => void;
+  onResetPassword: (profile: Profile, newPassword: string) => void;
   canViewIp: boolean;
 }
 
@@ -94,8 +96,11 @@ function UserCard({
   onUnban, 
   onDelete,
   onToggleSecondAdmin,
+  onResetPassword,
   canViewIp
 }: UserCardProps) {
+  const [resetPwOpen, setResetPwOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
   const isUserAdmin = adminUserIds.includes(profile.user_id);
   const isUserSecondAdmin = userRoles.some(r => r.user_id === profile.user_id && r.role === 'second_admin');
   
@@ -167,6 +172,41 @@ function UserCard({
               <ShieldCheck className="w-4 h-4" />
               {isUserSecondAdmin ? '取消第二管理员' : '设为第二管理员'}
             </Button>
+          )}
+          {/* Reset password - main admin only, not for self or other admins */}
+          {isMainAdmin && !isUserAdmin && (
+            <Dialog open={resetPwOpen} onOpenChange={(open) => { setResetPwOpen(open); if (!open) setNewPassword(''); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <KeyRound className="w-4 h-4" />
+                  重置密码
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>重置 {profile.real_name} 的密码</DialogTitle>
+                </DialogHeader>
+                <Input
+                  type="text"
+                  placeholder="输入新密码（至少6位）"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setResetPwOpen(false)}>取消</Button>
+                  <Button
+                    disabled={newPassword.length < 6}
+                    onClick={() => {
+                      onResetPassword(profile, newPassword);
+                      setResetPwOpen(false);
+                      setNewPassword('');
+                    }}
+                  >
+                    确认重置
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
           {canBanUser && (
             profile.status === 'banned' ? (
@@ -451,6 +491,24 @@ export default function AdminPage() {
     }
   };
 
+  const handleResetPassword = async (profile: Profile, newPassword: string) => {
+    if (!isMainAdmin) {
+      toast.error('只有正式管理员才能重置密码');
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { targetUserId: profile.user_id, newPassword }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`已重置 ${profile.real_name} 的密码`);
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      toast.error(error.message || '重置密码失败');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -654,6 +712,7 @@ export default function AdminPage() {
                           onUnban={handleUnbanUser}
                           onDelete={handleDeleteUser}
                           onToggleSecondAdmin={handleToggleSecondAdmin}
+                          onResetPassword={handleResetPassword}
                           canViewIp={canViewIp}
                         />
                       );
