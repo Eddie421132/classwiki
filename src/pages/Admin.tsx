@@ -82,6 +82,7 @@ interface UserCardProps {
   onUnban: (profile: Profile) => void;
   onDelete: (profile: Profile) => void;
   onToggleSecondAdmin: (profile: Profile, isCurrentlySecondAdmin: boolean) => void;
+  onResetPassword: (profile: Profile, newPassword: string) => void;
   canViewIp: boolean;
 }
 
