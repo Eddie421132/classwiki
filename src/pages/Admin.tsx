@@ -491,6 +491,24 @@ export default function AdminPage() {
     }
   };
 
+  const handleResetPassword = async (profile: Profile, newPassword: string) => {
+    if (!isMainAdmin) {
+      toast.error('只有正式管理员才能重置密码');
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { targetUserId: profile.user_id, newPassword }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`已重置 ${profile.real_name} 的密码`);
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      toast.error(error.message || '重置密码失败');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
