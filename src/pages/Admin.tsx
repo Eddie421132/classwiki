@@ -96,8 +96,11 @@ function UserCard({
   onUnban, 
   onDelete,
   onToggleSecondAdmin,
+  onResetPassword,
   canViewIp
 }: UserCardProps) {
+  const [resetPwOpen, setResetPwOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
   const isUserAdmin = adminUserIds.includes(profile.user_id);
   const isUserSecondAdmin = userRoles.some(r => r.user_id === profile.user_id && r.role === 'second_admin');
   
