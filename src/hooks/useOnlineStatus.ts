@@ -7,7 +7,7 @@ const ONLINE_THRESHOLD = 60000; // 60 seconds - if last_seen is older, user is o
 
 export function useOnlineStatus() {
   const { user } = useAuth();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updatePresence = useCallback(async () => {
     if (!user?.id) return;
