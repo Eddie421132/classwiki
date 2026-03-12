@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Search, User, Edit, Settings } from 'lucide-react';
+import { Home, BookOpen, Search, User, Edit, Settings, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -24,7 +24,10 @@ export function BottomNav() {
       : []),
     ...(user
       ? [{ icon: Settings, label: '设置', path: '/settings' }]
-      : [{ icon: User, label: '登录', path: '/user-auth' }]),
+      : [
+          { icon: Shield, label: '管理员', path: '/admin-login' },
+          { icon: User, label: '登录', path: '/user-auth' },
+        ]),
   ];
 
   // Hide bottom nav on editor page to avoid blocking toolbar
