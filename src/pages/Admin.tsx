@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Users, FileText, Bell, Check, X, Ban, Trash2, 
-  Loader2, User, Clock, ShieldCheck, MapPin, Globe, MessageSquare
+  Loader2, User, Clock, ShieldCheck, MapPin, Globe, MessageSquare, KeyRound
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { UserIpDialog } from '@/components/UserIpDialog';
 import { IpBanManager } from '@/components/IpBanManager';
 import { Textarea } from '@/components/ui/textarea';
