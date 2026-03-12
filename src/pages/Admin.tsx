@@ -173,6 +173,41 @@ function UserCard({
               {isUserSecondAdmin ? '取消第二管理员' : '设为第二管理员'}
             </Button>
           )}
+          {/* Reset password - main admin only, not for self or other admins */}
+          {isMainAdmin && !isUserAdmin && (
+            <Dialog open={resetPwOpen} onOpenChange={(open) => { setResetPwOpen(open); if (!open) setNewPassword(''); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <KeyRound className="w-4 h-4" />
+                  重置密码
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>重置 {profile.real_name} 的密码</DialogTitle>
+                </DialogHeader>
+                <Input
+                  type="text"
+                  placeholder="输入新密码（至少6位）"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setResetPwOpen(false)}>取消</Button>
+                  <Button
+                    disabled={newPassword.length < 6}
+                    onClick={() => {
+                      onResetPassword(profile, newPassword);
+                      setResetPwOpen(false);
+                      setNewPassword('');
+                    }}
+                  >
+                    确认重置
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
           {canBanUser && (
             profile.status === 'banned' ? (
               <Button size="sm" variant="outline" onClick={() => onUnban(profile)}>
