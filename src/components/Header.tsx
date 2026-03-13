@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Edit, LogOut, User, Bell, Settings, FileText, History, MessageSquare } from 'lucide-react';
+import { Shield, Edit, LogOut, User, Settings, FileText, History, MessageSquare } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,8 @@ export function Header() {
             <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
           ) : user ? (
             <>
+              <NotificationBell />
+
               {canAccessAdmin && (
                 <Button
                   variant="outline"
@@ -52,7 +55,7 @@ export function Header() {
                   onClick={() => navigate('/admin')}
                   className="hidden md:flex gap-2"
                 >
-                  <Bell className="w-4 h-4" />
+                  <Shield className="w-4 h-4" />
                   管理中心
                 </Button>
               )}

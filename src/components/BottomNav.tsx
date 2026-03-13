@@ -1,14 +1,42 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Search, User, Edit, Settings, Shield } from 'lucide-react';
+import { Home, BookOpen, Search, User, Edit, Settings, Shield, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAdmin, isSecondAdmin, isApprovedEditor } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const canEdit = isAdmin || isSecondAdmin || isApprovedEditor;
+
+  // Fetch unread notification count
+  const fetchUnread = useCallback(async () => {
+    if (!user) return;
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false);
+    setUnreadCount(count || 0);
+  }, [user]);
+
+  useEffect(() => { fetchUnread(); }, [fetchUnread]);
+
+  // Realtime for unread count
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('bottom-nav-notifs-' + user.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
+        fetchUnread();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchUnread]);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -42,19 +70,27 @@ export function BottomNav() {
             key={path}
             onClick={() => navigate(path)}
             className={cn(
-              'flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors py-2',
+              'flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors py-2 relative',
               isActive(path)
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <Icon
-              className={cn(
-                'w-5 h-5 transition-transform',
-                isActive(path) && 'scale-110'
+            <div className="relative">
+              <Icon
+                className={cn(
+                  'w-5 h-5 transition-transform',
+                  isActive(path) && 'scale-110'
+                )}
+                strokeWidth={isActive(path) ? 2.5 : 1.8}
+              />
+              {/* Show notification badge on Settings icon for logged-in users */}
+              {label === '设置' && unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               )}
-              strokeWidth={isActive(path) ? 2.5 : 1.8}
-            />
+            </div>
             <span className={cn('font-medium', isActive(path) && 'font-semibold')}>
               {label}
             </span>
