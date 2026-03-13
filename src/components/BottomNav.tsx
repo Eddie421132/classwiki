@@ -70,19 +70,27 @@ export function BottomNav() {
             key={path}
             onClick={() => navigate(path)}
             className={cn(
-              'flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors py-2',
+              'flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors py-2 relative',
               isActive(path)
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <Icon
-              className={cn(
-                'w-5 h-5 transition-transform',
-                isActive(path) && 'scale-110'
+            <div className="relative">
+              <Icon
+                className={cn(
+                  'w-5 h-5 transition-transform',
+                  isActive(path) && 'scale-110'
+                )}
+                strokeWidth={isActive(path) ? 2.5 : 1.8}
+              />
+              {/* Show notification badge on Settings icon for logged-in users */}
+              {label === '设置' && unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               )}
-              strokeWidth={isActive(path) ? 2.5 : 1.8}
-            />
+            </div>
             <span className={cn('font-medium', isActive(path) && 'font-semibold')}>
               {label}
             </span>
