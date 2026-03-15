@@ -6,6 +6,65 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function sendJPush(aliases: string[], title: string, body: string, extras: Record<string, string>) {
+  const appKey = Deno.env.get('JPUSH_APP_KEY');
+  const masterSecret = Deno.env.get('JPUSH_MASTER_SECRET');
+
+  if (!appKey || !masterSecret) {
+    console.error('JPush credentials not configured');
+    return;
+  }
+
+  const auth = btoa(`${appKey}:${masterSecret}`);
+
+  // JPush limits aliases to 1000 per request, batch if needed
+  const batchSize = 1000;
+  for (let i = 0; i < aliases.length; i += batchSize) {
+    const batch = aliases.slice(i, i + batchSize);
+
+    const payload = {
+      platform: 'all',
+      audience: {
+        alias: batch,
+      },
+      notification: {
+        android: {
+          alert: body,
+          title: title,
+          extras: extras,
+        },
+        ios: {
+          alert: {
+            title: title,
+            body: body,
+          },
+          sound: 'default',
+          extras: extras,
+        },
+      },
+      options: {
+        time_to_live: 86400, // 24 hours
+      },
+    };
+
+    try {
+      const resp = await fetch('https://api.jpush.cn/v3/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${auth}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await resp.text();
+      console.log(`JPush response (batch ${i / batchSize + 1}):`, resp.status, result);
+    } catch (e) {
+      console.error('JPush request failed:', e);
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,7 +103,11 @@ serve(async (req) => {
       });
     }
 
-    // Insert in-app notifications
+    const extras = { articleId: articleId || '', type };
+
+    // Insert in-app notifications + collect JPush aliases
+    const jpushAliases: string[] = [];
+
     if (type === 'new_article') {
       // Notify all users except the author
       const { data: allProfiles } = await supabase
@@ -64,6 +127,9 @@ serve(async (req) => {
         
         const { error } = await supabase.from('notifications').insert(notifications);
         if (error) console.error('Error inserting notifications:', error);
+
+        // All users as JPush aliases
+        jpushAliases.push(...allProfiles.map(p => p.user_id));
       }
     } else {
       // Notify specific user
@@ -76,9 +142,18 @@ serve(async (req) => {
         actor_name: actorName,
       });
       if (error) console.error('Error inserting notification:', error);
+
+      if (targetUserId) {
+        jpushAliases.push(targetUserId);
+      }
     }
 
-    console.log('In-app notifications created');
+    console.log('In-app notifications created, sending JPush to', jpushAliases.length, 'aliases');
+
+    // Send JPush push notification
+    if (jpushAliases.length > 0) {
+      await sendJPush(jpushAliases, title, body, extras);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

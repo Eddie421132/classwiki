@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function usePushNotifications() {
@@ -8,59 +7,22 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+    if (!user) return;
 
     let cleanup = false;
 
     const setup = async () => {
       try {
-        const { PushNotifications } = await import('@capacitor/push-notifications');
-
-        const permResult = await PushNotifications.requestPermissions();
-        if (permResult.receive === 'granted') {
-          await PushNotifications.register();
-
-          PushNotifications.addListener('registration', async (token) => {
-            if (cleanup || !user) return;
-            console.log('Push registration token:', token.value);
-
-            const { error } = await supabase
-              .from('device_tokens')
-              .upsert(
-                {
-                  user_id: user.id,
-                  token: token.value,
-                  platform: 'android',
-                  updated_at: new Date().toISOString(),
-                },
-                { onConflict: 'user_id,token' }
-              );
-
-            if (error) {
-              console.error('Error saving device token:', error);
-            }
-          });
-
-          PushNotifications.addListener('registrationError', (error) => {
-            console.error('Push registration error:', error);
-          });
-
-          PushNotifications.addListener('pushNotificationReceived', (notification) => {
-            console.log('Push notification received:', notification);
-          });
-
-          // When user taps a notification, navigate within the app's webview
-          PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-            console.log('Push notification action:', action);
-            const data = action.notification.data;
-            if (data?.articleId) {
-              window.location.href = `/article/${data.articleId}`;
-            }
-          });
+        // JPush plugin - set alias to user_id for targeted push
+        const jpush = (window as any).JPush;
+        if (jpush) {
+          jpush.setAlias({ sequence: 1, alias: user.id });
+          console.log('JPush alias set to:', user.id);
         } else {
-          console.log('Push notification permission denied');
+          console.log('JPush plugin not available (native SDK not integrated)');
         }
       } catch (e) {
-        console.log('Push notifications not available:', e);
+        console.log('JPush setup error:', e);
       }
     };
 
